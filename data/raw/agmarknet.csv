@@ -1,0 +1,9 @@
+State,District,Market,Commodity,Variety,Arrival_Date,Min_Price,Max_Price,Modal_Price
+Maharashtra,Pune,Pune,Tomato,Local,01/01/2023,500,800,650
+Maharashtra,Nashik,Nashik,Onion,Red,01/01/2023,300,600,450
+Uttar Pradesh,Agra,Agra,Potato,General,15/06/2022,200,400,300
+Karnataka,Bangalore,Bangalore,Tomato,Local,01/03/2023,400,700,550
+Punjab,Amritsar,Amritsar,Wheat,Sharbati,01/11/2022,1800,2100,1950
+Bihar,Patna,Patna,Rice,Swarna,01/08/2022,1500,1900,1700
+Rajasthan,Jaipur,Jaipur,Onion,White,01/05/2023,250,500,375
+Gujarat,Ahmedabad,Ahmedabad,Cotton,Long Staple,01/10/2022,5500,6200,5850
