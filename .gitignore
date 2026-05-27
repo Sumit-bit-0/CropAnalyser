@@ -1,10 +1,13 @@
 data/raw/
 data/processed/
 saved_models/
-backend/__pycache__/
-backend/**/__pycache__/
+**/__pycache__/
 *.pyc
 .env
+.env.local
+.env.*.local
 venv/
 node_modules/
 frontend/dist/
+.pytest_cache/
+htmlcov/
