@@ -1,3 +1,4 @@
+import joblib
 import numpy as np
 import torch
 from models.lstm import PriceLSTM
@@ -8,18 +9,16 @@ from config import LSTM_SEQUENCE_LEN, LSTM_FORECAST_LEN, MODELS_DIR
 def predict(state: str, commodity: str) -> list[dict]:
     safe_name   = f"{state}_{commodity}".replace(" ", "_").replace("/", "-")
     model_path  = MODELS_DIR / f"{safe_name}.pt"
-    scaler_path = MODELS_DIR / f"{safe_name}_scaler.npy"
+    scaler_path = MODELS_DIR / f"{safe_name}_scaler.joblib"
 
-    if not model_path.exists():
+    if not model_path.exists() or not scaler_path.exists():
         raise FileNotFoundError(f"No trained model for {state}/{commodity}. Train it first.")
 
-    scaler_data = np.load(str(scaler_path), allow_pickle=True).item()
-    scale_ = scaler_data["scale_"]
-    min_   = scaler_data["min_"]
+    scaler = joblib.load(scaler_path)
 
-    records   = get_price_trend(state, commodity)
-    data      = np.array([[r["farm_gate_price"], r["modal_price"]] for r in records], dtype=np.float32)
-    data_scaled = (data - min_) / scale_
+    records     = get_price_trend(state, commodity)
+    data        = np.array([[r["farm_gate_price"], r["modal_price"]] for r in records], dtype=np.float32)
+    data_scaled = scaler.transform(data)
 
     seq   = torch.tensor(data_scaled[-LSTM_SEQUENCE_LEN:]).unsqueeze(0)  # (1, seq_len, 2)
     model = PriceLSTM(input_size=2, hidden_size=64, num_layers=2, forecast_len=LSTM_FORECAST_LEN)
@@ -29,11 +28,11 @@ def predict(state: str, commodity: str) -> list[dict]:
     with torch.no_grad():
         pred_scaled = model(seq).squeeze(0).numpy()  # (forecast_len, 2)
 
-    pred = pred_scaled * scale_ + min_
+    pred = scaler.inverse_transform(pred_scaled)
 
-    last_record  = records[-1]
-    last_year    = int(last_record["period"].split("-")[0])
-    last_month   = int(last_record["period"].split("-")[1])
+    last_record = records[-1]
+    last_year   = int(last_record["period"].split("-")[0])
+    last_month  = int(last_record["period"].split("-")[1])
     results = []
     for i in range(LSTM_FORECAST_LEN):
         m = last_month + i + 1

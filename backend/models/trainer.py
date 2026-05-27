@@ -1,3 +1,4 @@
+import joblib
 import numpy as np
 import torch
 import torch.nn as nn
@@ -52,9 +53,10 @@ def train(state: str, commodity: str, epochs: int = 50) -> float:
     print(f"Validation MSE: {val_loss:.6f}")
 
     safe_name   = f"{state}_{commodity}".replace(" ", "_").replace("/", "-")
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
     model_path  = MODELS_DIR / f"{safe_name}.pt"
-    scaler_path = MODELS_DIR / f"{safe_name}_scaler.npy"
+    scaler_path = MODELS_DIR / f"{safe_name}_scaler.joblib"
     torch.save(model.state_dict(), model_path)
-    np.save(str(scaler_path), {"scale_": scaler.scale_, "min_": scaler.min_})
+    joblib.dump(scaler, scaler_path)
     print(f"Saved model to {model_path}")
     return float(val_loss)
