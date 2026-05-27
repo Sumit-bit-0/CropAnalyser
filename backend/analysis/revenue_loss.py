@@ -13,7 +13,7 @@ def get_revenue_loss() -> list[dict]:
         ORDER BY avg_gap_per_quintal DESC
     """)
     df["estimated_loss_cr"] = (
-        df["avg_gap_per_quintal"] * PROXY_VOLUME_QUINTALS * 12 / 10_000_000
+        df["avg_gap_per_quintal"].clip(lower=0) * PROXY_VOLUME_QUINTALS * 12 / 10_000_000
     ).round(4)
     df["avg_gap_per_quintal"] = df["avg_gap_per_quintal"].round(2)
     return df[["state", "avg_gap_per_quintal", "estimated_loss_cr", "crop_count"]].to_dict(orient="records")
