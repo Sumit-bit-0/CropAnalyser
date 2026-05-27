@@ -1,3 +1,4 @@
+import contextlib
 import sqlite3
 import pandas as pd
 from config import DB_PATH, init_dirs
@@ -8,8 +9,8 @@ def get_connection() -> sqlite3.Connection:
     return sqlite3.connect(DB_PATH)
 
 
-def init_db():
-    with get_connection() as conn:
+def init_db() -> None:
+    with contextlib.closing(get_connection()) as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS prices (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,12 +26,12 @@ def init_db():
         conn.commit()
 
 
-def insert_prices(df: pd.DataFrame):
-    with get_connection() as conn:
+def insert_prices(df: pd.DataFrame) -> None:
+    with contextlib.closing(get_connection()) as conn:
         df.to_sql("prices", conn, if_exists="append", index=False)
         conn.commit()
 
 
 def query(sql: str, params: tuple = ()) -> pd.DataFrame:
-    with get_connection() as conn:
+    with contextlib.closing(get_connection()) as conn:
         return pd.read_sql_query(sql, conn, params=params)
