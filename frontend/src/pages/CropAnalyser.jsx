@@ -2,29 +2,38 @@ import { useEffect, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { getCropMarkup, getTrendFilters } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
+import ErrorBanner from '../components/ErrorBanner'
 
 export default function CropAnalyser() {
   const [crops, setCrops]       = useState([])
   const [selected, setSelected] = useState('')
   const [data, setData]         = useState([])
   const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState(null)
 
   useEffect(() => {
-    getTrendFilters().then(f => {
-      setCrops(f.commodities)
-      if (f.commodities.length) setSelected(f.commodities[0])
-    })
+    getTrendFilters()
+      .then(f => {
+        setCrops(f.commodities)
+        if (f.commodities.length) setSelected(f.commodities[0])
+      })
+      .catch(e => setError(e.message))
   }, [])
 
   useEffect(() => {
     if (!selected) return
     setLoading(true)
-    getCropMarkup(selected).then(setData).finally(() => setLoading(false))
+    setError(null)
+    getCropMarkup(selected)
+      .then(d => setData([...d].sort((a, b) => b.avg_markup_pct - a.avg_markup_pct)))
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false))
   }, [selected])
 
   return (
     <div>
       <h1 className="text-2xl font-bold text-green-800 mb-2">Crop Markup by State</h1>
+      {error && <ErrorBanner message={error} />}
       <select className="border rounded px-3 py-2 mb-4 text-sm"
         value={selected} onChange={e => setSelected(e.target.value)}>
         {crops.map(c => <option key={c}>{c}</option>)}

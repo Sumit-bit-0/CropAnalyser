@@ -13,11 +13,13 @@ export default function Forecast() {
   const [error, setError]         = useState(null)
 
   useEffect(() => {
-    getTrendFilters().then(f => {
-      setFilters(f)
-      if (f.states.length)      setState(f.states[0])
-      if (f.commodities.length) setCommodity(f.commodities[0])
-    })
+    getTrendFilters()
+      .then(f => {
+        setFilters(f)
+        if (f.states.length)      setState(f.states[0])
+        if (f.commodities.length) setCommodity(f.commodities[0])
+      })
+      .catch(e => setError(e.message))
   }, [])
 
   useEffect(() => {
@@ -47,17 +49,18 @@ export default function Forecast() {
           {filters.commodities.map(c => <option key={c}>{c}</option>)}
         </select>
       </div>
-      {error && <ErrorBanner message={`No model trained for this combination yet. ${error}`} />}
-      {loading ? <LoadingSpinner /> : (
+      {error ? (
+        <ErrorBanner message={`No model trained for this combination yet. ${error}`} />
+      ) : loading ? <LoadingSpinner /> : (
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={combined}>
             <XAxis dataKey="period" tick={{ fontSize: 10 }} />
-            <YAxis unit="&#8377;" />
-            <Tooltip formatter={v => `&#8377;${v}`} />
+            <YAxis unit="₹" />
+            <Tooltip formatter={v => `₹${v}`} />
             <Legend />
             {splitPeriod && <ReferenceLine x={splitPeriod} stroke="#666" strokeDasharray="4 4" label="Forecast →" />}
-            <Line type="monotone" dataKey="farm_gate_price" stroke="#16a34a" name="Farm Gate &#8377;" dot={false} strokeWidth={2} />
-            <Line type="monotone" dataKey="modal_price" stroke="#dc2626" name="Market Price &#8377;" dot={false} strokeWidth={2} />
+            <Line type="monotone" dataKey="farm_gate_price" stroke="#16a34a" name="Farm Gate ₹" dot={false} strokeWidth={2} />
+            <Line type="monotone" dataKey="modal_price" stroke="#dc2626" name="Market Price ₹" dot={false} strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       )}
