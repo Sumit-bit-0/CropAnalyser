@@ -16,8 +16,10 @@ export default function Forecast() {
     getTrendFilters()
       .then(f => {
         setFilters(f)
-        if (f.states.length)      setState(f.states[0])
-        if (f.commodities.length) setCommodity(f.commodities[0])
+        // Default to a known-trained pair so the page opens to a real forecast,
+        // not an error banner. Fall back to alphabetical-first if unavailable.
+        setState(f.states.includes('Punjab') ? 'Punjab' : f.states[0] || '')
+        setCommodity(f.commodities.includes('Wheat') ? 'Wheat' : f.commodities[0] || '')
       })
       .catch(e => setError(e.message))
   }, [])

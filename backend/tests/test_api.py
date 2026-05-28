@@ -36,5 +36,7 @@ def test_revenue_loss():
     assert isinstance(r.json(), list)
 
 def test_forecast_no_model_returns_404():
-    r = client.get("/api/forecast?state=Maharashtra&commodity=Tomato")
+    # Pondicherry/Wheat is a real state+commodity but has no trained model
+    # (skipped during training due to insufficient records).
+    r = client.get("/api/forecast?state=Pondicherry&commodity=Wheat")
     assert r.status_code == 404
