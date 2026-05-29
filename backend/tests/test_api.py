@@ -40,3 +40,47 @@ def test_forecast_no_model_returns_404():
     # (skipped during training due to insufficient records).
     r = client.get("/api/forecast?state=Pondicherry&commodity=Wheat")
     assert r.status_code == 404
+
+
+def test_recommend_crop():
+    body = {"N": 90, "P": 42, "K": 43, "temperature": 20.8,
+            "humidity": 82.0, "ph": 6.5, "rainfall": 202.9}
+    r = client.post("/api/recommend/crop", json=body)
+    assert r.status_code in (200, 503)
+    if r.status_code == 200:
+        data = r.json()
+        assert "recommendations" in data and "top" in data
+        assert "crop" in data["top"]
+
+
+def test_profit_plan():
+    body = {"area_acres": 2, "yield_q_per_acre": 20, "input_cost": 10000,
+            "labour_cost": 5000, "transport_cost": 3000, "market_price": 1500}
+    r = client.post("/api/profit/plan", json=body)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["profit"] == 42000.0
+    assert "recommendation" in data
+
+
+def test_price_reference_endpoint():
+    r = client.get("/api/profit/price-reference",
+                   params={"state": "Maharashtra", "commodity": "Onion"})
+    assert r.status_code == 200
+    assert "risk_level" in r.json()
+
+
+def test_mandi_commodities():
+    r = client.get("/api/mandi/commodities")
+    assert r.status_code == 200
+    assert isinstance(r.json(), list)
+
+
+def test_mandi_compare():
+    r = client.get("/api/mandi/compare",
+                   params={"commodity": "Wheat", "lat": 19.07, "lon": 72.88, "top": 5})
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list)
+    if data:
+        assert {"market", "modal_price", "net_price"} <= set(data[0].keys())
