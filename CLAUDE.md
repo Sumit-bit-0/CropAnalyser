@@ -4,6 +4,9 @@
 India farm-to-retail price gap dashboard. 5 pages: State Map, Crop Analyser, Price Trend,
 Revenue Loss Estimator, LSTM Price Forecast. Dual-purpose: DA CV + PM CV for Sumit.
 
+**Project root:** `E:\agri-market-analyser` (moved from C: on 2026-05-29).
+**External datasets:** `E:\DataSETAgri` (Agmarknet prices, Crop_recommendation.csv, crop production/yield, FAOSTAT, weather).
+
 ## Stack
 | Layer | Technology |
 |---|---|
@@ -54,9 +57,10 @@ venv\Scripts\python.exe models\train_all.py
 
 ## GPU Rule
 ALL model training must use the NVIDIA RTX 3060 GPU via CUDA — never CPU.
-Current venv has CPU-only torch. Before training, upgrade:
+venv has CUDA torch **2.11.0+cu128** (verified: `torch.cuda.is_available()` → True, RTX 3060 Laptop GPU).
+Reinstall command if the venv is ever rebuilt:
 ```bash
-venv\Scripts\pip install torch --index-url https://download.pytorch.org/whl/cu121
+venv\Scripts\python.exe -m pip install torch==2.11.0 torchvision==0.26.0 torchaudio==2.11.0 --index-url https://download.pytorch.org/whl/cu128
 ```
 Always verify with `torch.cuda.is_available()` before starting a training run.
 
