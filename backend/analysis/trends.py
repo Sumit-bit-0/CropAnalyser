@@ -1,8 +1,15 @@
 from database import query
+from analysis.summaries import table_exists
 
 def get_available_filters() -> dict:
-    states_df = query("SELECT DISTINCT state FROM prices ORDER BY state")
-    commodities_df = query("SELECT DISTINCT commodity FROM prices ORDER BY commodity")
+    # Read distinct values from the tiny summary tables (instant) instead of
+    # scanning the 27.6M-row prices table; fall back to live if not built.
+    if table_exists("summary_state_markup") and table_exists("summary_crop_markup"):
+        states_df = query("SELECT state FROM summary_state_markup ORDER BY state")
+        commodities_df = query("SELECT DISTINCT commodity FROM summary_crop_markup ORDER BY commodity")
+    else:
+        states_df = query("SELECT DISTINCT state FROM prices ORDER BY state")
+        commodities_df = query("SELECT DISTINCT commodity FROM prices ORDER BY commodity")
     return {
         "states": states_df["state"].tolist(),
         "commodities": commodities_df["commodity"].tolist()

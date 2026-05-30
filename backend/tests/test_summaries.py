@@ -4,6 +4,8 @@ import pytest
 from analysis.summaries import build_summaries, table_exists
 from analysis.markup import get_state_markup, get_crop_markup
 from analysis.revenue_loss import get_revenue_loss
+from analysis.trends import get_available_filters
+from models.predictor import available_forecasts
 from database import query
 
 SUMMARY_TABLES = ("summary_state_markup", "summary_crop_markup", "summary_revenue_loss")
@@ -47,3 +49,25 @@ def test_revenue_loss_structure_sorted():
     assert r and {"state", "avg_gap_per_quintal", "estimated_loss_cr", "crop_count"} <= set(r[0])
     gaps = [x["avg_gap_per_quintal"] for x in r]
     assert gaps == sorted(gaps, reverse=True)
+
+
+def test_trends_filters_match_distinct_values():
+    """Summary-backed filters must equal the distinct states/commodities in the data."""
+    f = get_available_filters()
+    assert f["states"] == sorted(f["states"]) and "Punjab" in f["states"]
+    assert f["commodities"] == sorted(f["commodities"]) and "Wheat" in f["commodities"]
+    n_states = int(query("SELECT COUNT(*) n FROM summary_state_markup").iloc[0]["n"])
+    n_comm = int(query("SELECT COUNT(DISTINCT commodity) n FROM summary_crop_markup").iloc[0]["n"])
+    assert len(f["states"]) == n_states
+    assert len(f["commodities"]) == n_comm
+
+
+def test_available_forecasts_consistent():
+    av = available_forecasts()
+    assert "Punjab" in av and "Wheat" in av["Punjab"]
+    # never advertise a combo without a model file (cross-checks the summary-backed path)
+    from config import MODELS_DIR
+    for state, comms in list(av.items())[:3]:
+        for c in comms[:3]:
+            safe = f"{state}_{c}".replace(" ", "_").replace("/", "-")
+            assert (MODELS_DIR / f"{safe}.pt").exists()

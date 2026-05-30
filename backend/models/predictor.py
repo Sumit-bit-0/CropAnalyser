@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from models.lstm import PriceLSTM
 from analysis.trends import get_price_trend
+from analysis.summaries import table_exists
 from database import query
 from config import LSTM_SEQUENCE_LEN, LSTM_FORECAST_LEN, MODELS_DIR
 
@@ -18,11 +19,15 @@ def _safe_model_name(state: str, commodity: str) -> str:
 def available_forecasts() -> dict[str, list[str]]:
     """Map of {state: [commodities]} for which a trained model file exists.
 
-    Iterates the known (state, commodity) pairs from the DB and keeps only those
-    with a model on disk, so the catalog can never advertise a missing model and
-    avoids fragile reverse-parsing of model filenames.
+    Iterates the known (state, commodity) pairs and keeps only those with a model
+    on disk, so the catalog can never advertise a missing model and avoids fragile
+    reverse-parsing of model filenames. Reads pairs from the tiny summary table
+    (instant) instead of scanning the 27.6M-row prices table; live fallback if absent.
     """
-    pairs = query("SELECT DISTINCT state, commodity FROM prices")
+    if table_exists("summary_crop_markup"):
+        pairs = query("SELECT state, commodity FROM summary_crop_markup")
+    else:
+        pairs = query("SELECT DISTINCT state, commodity FROM prices")
     out: dict[str, list[str]] = {}
     for state, commodity in pairs.itertuples(index=False):
         if (MODELS_DIR / f"{_safe_model_name(state, commodity)}.pt").exists():
