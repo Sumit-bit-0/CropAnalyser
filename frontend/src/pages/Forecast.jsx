@@ -1,28 +1,40 @@
 import { useEffect, useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts'
-import { getTrendFilters, getPriceTrend, getForecast } from '../api/client'
+import { getForecastAvailable, getPriceTrend, getForecast } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorBanner from '../components/ErrorBanner'
 
 export default function Forecast() {
-  const [filters, setFilters]     = useState({ states: [], commodities: [] })
+  const [avail, setAvail]         = useState({})   // { state: [commodities] } — only trained models
   const [state, setState]         = useState('')
   const [commodity, setCommodity] = useState('')
   const [combined, setCombined]   = useState([])
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState(null)
 
+  const states = Object.keys(avail)
+  const commodities = avail[state] || []
+
   useEffect(() => {
-    getTrendFilters()
-      .then(f => {
-        setFilters(f)
-        // Default to a known-trained pair so the page opens to a real forecast,
-        // not an error banner. Fall back to alphabetical-first if unavailable.
-        setState(f.states.includes('Punjab') ? 'Punjab' : f.states[0] || '')
-        setCommodity(f.commodities.includes('Wheat') ? 'Wheat' : f.commodities[0] || '')
+    getForecastAvailable()
+      .then(map => {
+        setAvail(map)
+        const states = Object.keys(map)
+        // Open on a known-good pair so the page shows a real forecast immediately.
+        const s0 = map['Punjab'] ? 'Punjab' : states[0] || ''
+        const c0 = s0 ? (map[s0].includes('Wheat') ? 'Wheat' : map[s0][0]) : ''
+        setState(s0)
+        setCommodity(c0)
       })
       .catch(e => setError(e.message))
   }, [])
+
+  // Keep commodity valid whenever the state changes.
+  const onStateChange = (s) => {
+    setState(s)
+    const list = avail[s] || []
+    if (!list.includes(commodity)) setCommodity(list[0] || '')
+  }
 
   useEffect(() => {
     if (!state || !commodity) return
@@ -42,17 +54,20 @@ export default function Forecast() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-green-800 mb-2">Price Forecast (LSTM)</h1>
-      <p className="text-gray-500 text-sm mb-4">Historical (last 12 months) + 6-month LSTM prediction. Dashed line marks forecast start.</p>
+      <p className="text-gray-500 text-sm mb-4">
+        Historical (last 12 months) + 6-month LSTM prediction. Dashed line marks forecast start.
+        Only states &amp; crops with a trained model are listed ({states.length} states).
+      </p>
       <div className="flex gap-4 mb-4">
-        <select className="border rounded px-3 py-2 text-sm" value={state} onChange={e => setState(e.target.value)}>
-          {filters.states.map(s => <option key={s}>{s}</option>)}
+        <select className="border rounded px-3 py-2 text-sm" value={state} onChange={e => onStateChange(e.target.value)}>
+          {states.map(s => <option key={s}>{s}</option>)}
         </select>
         <select className="border rounded px-3 py-2 text-sm" value={commodity} onChange={e => setCommodity(e.target.value)}>
-          {filters.commodities.map(c => <option key={c}>{c}</option>)}
+          {commodities.map(c => <option key={c}>{c}</option>)}
         </select>
       </div>
       {error ? (
-        <ErrorBanner message={`No model trained for this combination yet. ${error}`} />
+        <ErrorBanner message={error} />
       ) : loading ? <LoadingSpinner /> : (
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={combined}>

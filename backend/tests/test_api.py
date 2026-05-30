@@ -41,6 +41,17 @@ def test_forecast_no_model_returns_404():
     r = client.get("/api/forecast?state=Pondicherry&commodity=Wheat")
     assert r.status_code == 404
 
+def test_forecast_available():
+    r = client.get("/api/forecast/available")
+    assert r.status_code == 200
+    body = r.json()
+    assert isinstance(body, dict) and body
+    assert "Punjab" in body and "Wheat" in body["Punjab"]
+    # every advertised combo must actually forecast (no dead options)
+    state = "Punjab"
+    commodity = body[state][0]
+    assert client.get(f"/api/forecast?state={state}&commodity={commodity}").status_code == 200
+
 
 def test_recommend_crop():
     body = {"N": 90, "P": 42, "K": 43, "temperature": 20.8,
