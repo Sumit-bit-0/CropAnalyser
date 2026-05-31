@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router-dom'
 
 const links = [
   { to: '/', label: 'Home' },
-  { to: '/recommend', label: 'Crop Advisor' },
+  { to: '/advisor', label: 'Crop Advisor' },
+  { to: '/recommend', label: 'Soil Match' },
   { to: '/profit', label: 'Profit Planner' },
   { to: '/mandi', label: 'Mandi Compare' },
   { to: '/map', label: 'State Map' },

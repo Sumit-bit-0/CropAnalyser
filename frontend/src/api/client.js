@@ -10,6 +10,7 @@ export const getRevenueLoss   = () => api.get('/revenue-loss').then(r => r.data)
 export const getForecast      = (state, commodity) => api.get('/forecast', { params: { state, commodity } }).then(r => r.data)
 export const getForecastAvailable = () => api.get('/forecast/available').then(r => r.data)
 export const recommendCrop    = (body) => api.post('/recommend/crop', body).then(r => r.data)
+export const recommendSmart   = (body) => api.post('/recommend/smart', body).then(r => r.data)
 export const planProfit       = (body) => api.post('/profit/plan', body).then(r => r.data)
 export const getPriceReference = (state, commodity) =>
   api.get('/profit/price-reference', { params: { state, commodity } }).then(r => r.data)
