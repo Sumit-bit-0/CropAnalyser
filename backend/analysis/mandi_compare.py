@@ -61,4 +61,5 @@ def compare_markets(commodity: str, lat=None, lon=None, rate_per_km=0.0, top_k=1
 
 def list_commodities() -> list[str]:
     df = query("SELECT DISTINCT commodity FROM mandi_prices ORDER BY commodity")
-    return df["commodity"].tolist() if not df.empty else []
+    # Sort in Python so ordering is independent of DB collation (see trends.py).
+    return sorted(df["commodity"].tolist()) if not df.empty else []

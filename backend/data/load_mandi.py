@@ -3,10 +3,10 @@
 Run from backend/ as a module:
     venv\\Scripts\\python.exe -m data.load_mandi "E:\\DataSETAgri\\Agriculture_price_dataset.csv"
 """
-import contextlib
 import sys
 import pandas as pd
-from database import get_connection
+from sqlalchemy import text
+from database import get_engine
 
 COLMAP = {
     "STATE": "state", "District Name": "district", "Market Name": "market",
@@ -29,26 +29,26 @@ def clean_mandi(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def create_table() -> None:
-    with contextlib.closing(get_connection()) as conn:
-        conn.execute("DROP TABLE IF EXISTS mandi_prices")
-        conn.execute("""
+    with get_engine().begin() as conn:
+        conn.execute(text("DROP TABLE IF EXISTS mandi_prices"))
+        conn.execute(text("""
             CREATE TABLE mandi_prices (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 state TEXT, district TEXT, market TEXT, commodity TEXT,
                 variety TEXT, grade TEXT,
                 min_price REAL, max_price REAL, modal_price REAL,
                 price_date TEXT
             )
-        """)
-        conn.commit()
+        """))
 
 
 def insert(df: pd.DataFrame) -> None:
-    with contextlib.closing(get_connection()) as conn:
+    engine = get_engine()
+    with engine.begin() as conn:
         df.to_sql("mandi_prices", conn, if_exists="append", index=False, chunksize=10000)
-        conn.execute("CREATE INDEX idx_mandi_commodity ON mandi_prices(commodity)")
-        conn.execute("CREATE INDEX idx_mandi_state_district ON mandi_prices(state, district)")
-        conn.commit()
+    with engine.begin() as conn:
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_mandi_commodity ON mandi_prices(commodity)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_mandi_state_district ON mandi_prices(state, district)"))
 
 
 if __name__ == "__main__":

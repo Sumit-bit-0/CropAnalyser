@@ -1,0 +1,36 @@
+# Local development database for Agri Market Access Analyser / CropAdvisor.
+# Brings up a PostgreSQL 16 server with a persistent named volume.
+#
+#   docker compose up -d      # start in background
+#   docker compose ps         # check status / health
+#   docker compose logs -f db # follow logs
+#   docker compose down       # stop (data is kept in the named volume)
+#   docker compose down -v    # stop AND delete data (full reset)
+#
+# Connection settings come from .env (see .env.example). Defaults below let it
+# run even without a .env, but .env is the source of truth for the app too.
+
+services:
+  db:
+    image: postgres:16
+    container_name: agri-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-agri}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agri_dev_pw}
+      POSTGRES_DB: ${POSTGRES_DB:-agri}
+    ports:
+      # host:container — change the host side via POSTGRES_PORT if 5432 is taken
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - agri_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # app/migration scripts can wait on this before connecting
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agri} -d ${POSTGRES_DB:-agri}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  agri_pgdata:
+    name: agri_pgdata
