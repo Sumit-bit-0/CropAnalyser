@@ -33,9 +33,10 @@ def test_state_markup_all_states_sorted_desc():
 def test_crop_markup_matches_live_computation():
     """Summary-backed crop markup must equal a fresh (indexed, fast) live query."""
     summ = {d["state"]: d["avg_markup_pct"] for d in get_crop_markup("Tomato")}
+    # CAST to numeric: Postgres ROUND(value, n) requires numeric, not double precision.
     live = query("""
         SELECT state,
-               ROUND(AVG((modal_price - farm_gate_price) / NULLIF(farm_gate_price, 0) * 100), 2) p
+               ROUND(CAST(AVG((modal_price - farm_gate_price) / NULLIF(farm_gate_price, 0) * 100) AS numeric), 2) p
         FROM prices WHERE LOWER(commodity) = LOWER('Tomato') GROUP BY state
     """)
     live_map = {row.state: row.p for row in live.itertuples()}

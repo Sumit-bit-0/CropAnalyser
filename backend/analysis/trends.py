@@ -10,9 +10,11 @@ def get_available_filters() -> dict:
     else:
         states_df = query("SELECT DISTINCT state FROM prices ORDER BY state")
         commodities_df = query("SELECT DISTINCT commodity FROM prices ORDER BY commodity")
+    # Sort in Python (code-point order) so ordering is deterministic and
+    # independent of the database's collation (Postgres locale != SQLite BINARY).
     return {
-        "states": states_df["state"].tolist(),
-        "commodities": commodities_df["commodity"].tolist()
+        "states": sorted(states_df["state"].tolist()),
+        "commodities": sorted(commodities_df["commodity"].tolist())
     }
 
 def get_price_trend(state: str, commodity: str) -> list[dict]:

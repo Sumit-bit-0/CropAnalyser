@@ -12,7 +12,7 @@ Revenue Loss Estimator, LSTM Price Forecast. Dual-purpose: DA CV + PM CV for Sum
 |---|---|
 | Backend API | Python + FastAPI |
 | ML / Forecasting | PyTorch (LSTM), scikit-learn |
-| Database | SQLite (`data/processed/agri.db` — 2 GB) |
+| Database | PostgreSQL 16 via Docker (`DATABASE_URL` in `.env`); legacy SQLite `data/processed/agri.db` kept as fallback |
 | Frontend | React + Vite + Tailwind + Leaflet + Recharts |
 | Deploy | Render (backend) + Vercel (frontend) |
 
@@ -38,6 +38,11 @@ agri-market-analyser/
 
 ## Running the Project
 ```bash
+# Database (PostgreSQL via Docker) — start first
+docker compose up -d          # from repo root; Postgres on localhost:5432
+# Re-migrate from SQLite if ever needed:
+#   cd backend && venv\Scripts\python.exe -m data.migrate_to_pg
+
 # Backend
 cd backend
 venv\Scripts\python.exe -m uvicorn main:app --reload
@@ -46,9 +51,9 @@ venv\Scripts\python.exe -m uvicorn main:app --reload
 cd frontend
 npm run dev
 
-# Run tests
+# Run tests (asyncio plugin off — see note below)
 cd backend
-venv\Scripts\python.exe -m pytest tests/ -v
+venv\Scripts\python.exe -m pytest tests -p no:asyncio -q
 
 # Train LSTM models (GPU preferred — RTX 3060)
 cd backend
@@ -89,7 +94,7 @@ Never write CPU-only training code. Always:
 - Warn explicitly if falling back to CPU
 
 ### 3. Data Sensitivity
-- `data/processed/agri.db` is 2 GB — never read it whole, always query via SQLite
+- `prices` is ~27.6M rows — never SELECT it whole; query via Postgres (`database.query`). Legacy SQLite `agri.db` (2 GB) is read-only fallback.
 - `kaggle.json` does not exist here — data is already loaded
 
 ### 4. Tests

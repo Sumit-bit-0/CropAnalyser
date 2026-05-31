@@ -1,11 +1,19 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 ROOT = Path(__file__).parent.parent
 DATA_RAW = ROOT / "data" / "raw"
 DATA_PROCESSED = ROOT / "data" / "processed"
 DB_PATH = DATA_PROCESSED / "agri.db"
 MODELS_DIR = ROOT / "saved_models"
+
+# Load env (DATABASE_URL etc.) from the project-root .env if present.
+load_dotenv(ROOT / ".env")
+
+# Primary database connection (SQLAlchemy URL). Defaults to the legacy local
+# SQLite file so the app still works if no .env is configured.
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
 
 LSTM_SEQUENCE_LEN = 12
 LSTM_FORECAST_LEN = 6

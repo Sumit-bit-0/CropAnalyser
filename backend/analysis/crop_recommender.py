@@ -30,7 +30,8 @@ def _load():
     return _CACHE
 
 
-def recommend_crops(features: dict, top_k: int = 3) -> list[dict]:
+def predict_proba(features: dict) -> dict:
+    """Softmax probability per crop label for the given soil/climate features."""
     missing = [f for f in FEATURES if f not in features]
     if missing:
         raise ValueError(f"Missing features: {missing}")
@@ -39,5 +40,10 @@ def recommend_crops(features: dict, top_k: int = 3) -> list[dict]:
     xs = scaler.transform(x).astype(np.float32)
     with torch.no_grad():
         probs = torch.softmax(model(torch.tensor(xs)), dim=1).numpy()[0]
-    idx = probs.argsort()[::-1][:top_k]
-    return [{"crop": labels[i], "confidence_pct": round(float(probs[i] * 100), 1)} for i in idx]
+    return {labels[i]: float(probs[i]) for i in range(len(labels))}
+
+
+def recommend_crops(features: dict, top_k: int = 3) -> list[dict]:
+    proba = predict_proba(features)
+    ranked = sorted(proba.items(), key=lambda kv: kv[1], reverse=True)[:top_k]
+    return [{"crop": c, "confidence_pct": round(p * 100, 1)} for c, p in ranked]
