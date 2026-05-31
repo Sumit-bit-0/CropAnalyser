@@ -49,3 +49,26 @@ def test_explanations_present_for_strong_crop():
     rec = out["recommendations"][0]
     assert rec["crop"] == "rice"
     assert any("proven" in w for w in rec["why"])
+
+
+def test_geometric_ranking_demotes_agronomically_absurd_crop():
+    """The hardening regression: across the full whitelist, coffee (high market,
+    ~0 suitability+regional in Punjab) must NOT top the list under geometric
+    fusion, even chasing profit; a real Punjab crop (rice) should rank above it."""
+    out = recommend("Punjab", "Ludhiana", features=RICE_SOIL,
+                    goal="max_profit", top_k=20)
+    assert out["method"] == "geometric"
+    ranking = [r["crop"] for r in out["recommendations"]]
+    top3 = ranking[:3]
+    assert "coffee" not in top3
+    assert ranking.index("rice") < ranking.index("coffee")
+
+
+def test_additive_method_reproduces_the_flaw():
+    """Under the old additive rule, coffee's lone strong market score tops the
+    full list — documenting exactly the flaw geometric fusion fixes."""
+    add = recommend("Punjab", "Ludhiana", features=RICE_SOIL,
+                    goal="max_profit", top_k=20, method="additive")
+    ranking = [r["crop"] for r in add["recommendations"]]
+    assert add["method"] == "additive"
+    assert ranking[0] == "coffee"

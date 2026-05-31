@@ -1,9 +1,18 @@
 """Fusion layer for CropAdvisor — combines the module scores into ranked,
 explained recommendations.
 
-Blends the available 0-1 module scores with configurable weights:
+Blends the available 0-1 module scores with configurable weights. Default
+aggregation is a WEIGHTED GEOMETRIC MEAN (multi-criteria): a crop must be
+reasonable on every dimension, so a near-zero score in any module drags the
+total down instead of being outvoted by one strong dimension.
 
-    final = Σ weight[m] * score[crop][m]     over available modules m
+    final = Π (floor + (1-floor)·score[crop][m]) ^ weight[m]      (geometric)
+            = exp( Σ weight[m]·ln(softened score) )
+
+The small `floor` softens zeros: a missing/weak dimension penalizes hard but
+doesn't brittlely annihilate the score. This fixes the additive flaw where an
+agronomically-absurd crop (coffee in Punjab) could top the list on market price
+alone. `method="additive"` (the old Σ weight·score) is kept for comparison.
 
 Graceful degradation: a module that can't run (e.g. Suitability with no soil/
 climate features = Simple Mode) is dropped and the remaining weights are
@@ -15,6 +24,8 @@ regional). Sustainable / Water-Efficient are accepted but no-ops in v1 (no
 supporting data yet). Each recommendation carries a per-module breakdown plus
 plain-language `why` / `cautions` for the explanation layer.
 """
+import math
+
 from analysis.crop_catalog import WHITELIST
 from analysis.regional_fit import regional_fit_scores
 from analysis.suitability import suitability_scores
@@ -22,6 +33,22 @@ from analysis.market_profitability import market_profitability_scores
 
 # v1 default weights over the three implemented modules (sum to 1.0).
 DEFAULT_WEIGHTS = {"suitability": 0.35, "regional": 0.30, "market": 0.35}
+
+# Geometric-mean softening: a 0 score becomes this floor, so one weak dimension
+# strongly penalizes the total without zeroing it outright.
+SOFTENING_FLOOR = 0.05
+
+
+def _fuse(breakdown: dict, w: dict, method: str) -> float:
+    """Aggregate a crop's per-module scores into one 0-1 score. `w` sums to 1."""
+    if method == "additive":
+        return round(sum(w[m] * breakdown[m] for m in w), 4)
+    # weighted geometric mean over softened scores (default)
+    log_sum = sum(
+        w[m] * math.log(SOFTENING_FLOOR + (1 - SOFTENING_FLOOR) * breakdown[m])
+        for m in w
+    )
+    return round(math.exp(log_sum), 4)
 
 # goal -> per-module weight multipliers (applied before renormalization)
 GOAL_MULTIPLIERS = {
@@ -64,7 +91,8 @@ def _cautions(crop, modules) -> list[str]:
 
 def recommend(state: str, district: str | None = None, season: str | None = None,
               features: dict | None = None, goal: str | None = None,
-              crops=None, top_k: int = 3, weights: dict | None = None) -> dict:
+              crops=None, top_k: int = 3, weights: dict | None = None,
+              method: str = "geometric") -> dict:
     crops = list(crops) if crops else WHITELIST
 
     # 1. run available modules
@@ -87,7 +115,7 @@ def recommend(state: str, district: str | None = None, season: str | None = None
     scored = []
     for c in crops:
         breakdown = {m: modules[m][c]["score"] for m in w}
-        score = round(sum(w[m] * breakdown[m] for m in w), 4)
+        score = _fuse(breakdown, w, method)
         scored.append((c, score, breakdown))
     scored.sort(key=lambda t: t[1], reverse=True)
 
@@ -103,5 +131,6 @@ def recommend(state: str, district: str | None = None, season: str | None = None
         "modules_used": sorted(w.keys()),
         "weights_used": w,
         "goal": goal,
+        "method": method,
         "recommendations": recommendations,
     }
