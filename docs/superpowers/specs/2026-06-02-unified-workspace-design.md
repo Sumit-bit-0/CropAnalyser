@@ -207,19 +207,17 @@ So the precise pincode point sharpens Phase 2 weather and mandi distance:
 ## Dependencies & config
 
 - No new Python dependency (stdlib `urllib` for the API fallback).
-- **Pincode source data (on disk + to-acquire):**
-  - `Pincode_Dataset.csv` (project root, 122,015 rows) — official India Post directory:
-    `Circle, Region, Division, Office Name, Pincode, OfficeType, Delivery, District,
-    StateName`. Comprehensive pincode → district/state, **but no coordinates**.
-  - `pincodes.csv` (project root, 39,737 rows) — smaller subset, also no coordinates;
-    superseded by the above, will be ignored.
-  - **A pincode + latitude/longitude dataset is REQUIRED** for the precision win
-    (precise weather point, mandi distance, reverse-GPS → nearest pincode). The API
-    fallback (postalpincode.in) does **not** return coordinates, so coords come only
-    from this file. User to supply (e.g. a Kaggle "India pincode lat-long" CSV or
-    DataMeet pincode centroids); columns needed: `pincode, latitude, longitude`.
-- **Build step:** normalize the coords dataset (joined with `Pincode_Dataset.csv` for
-  area/district/state names where missing) into the canonical bundled file
-  `data/raw/india_pincodes.csv` (`pincode, area, district, state, lat, lon`) via a
-  one-time loader script, following the `india_district_centroids.csv` pattern.
+- **Pincode source data — `all_india_pincode_directory_2025.csv`** (project root, 22 MB,
+  165,627 office rows). Columns: `circlename, regionname, divisionname, officename,
+  pincode, officetype, delivery, district, statename, latitude, longitude`. Covers
+  **19,586 distinct pincodes; 19,561 (99.9%) have valid coordinates** — this single file
+  provides pincode → district/state **and** coordinates. (`Pincode_Dataset.csv` and
+  `pincodes.csv` also on disk are now redundant — no coords — and are ignored.)
+- **Build step (loader):** aggregate the directory to one row per pincode — pincode
+  centroid = mean of that pincode's non-`NA` office `latitude`/`longitude`; district/
+  state from the pincode's rows; `area` = a representative office/town name — written to
+  the canonical bundled file `data/raw/india_pincodes.csv`
+  (`pincode, area, district, state, lat, lon`), following the
+  `india_district_centroids.csv` pattern. The ~25 pincodes with no usable coords fall
+  back to the district centroid.
 - Frontend: no new dependency (existing React Router + Tailwind).
