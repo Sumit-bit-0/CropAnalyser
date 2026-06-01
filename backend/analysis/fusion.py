@@ -30,9 +30,19 @@ from analysis.crop_catalog import WHITELIST
 from analysis.regional_fit import regional_fit_scores
 from analysis.suitability import suitability_scores
 from analysis.market_profitability import market_profitability_scores
+from analysis.yield_predict import predict_yield
+from analysis.price_outlook import price_outlook
 
-# v1 default weights over the three implemented modules (sum to 1.0).
+# Default weights over the three implemented modules (sum to 1.0), used in Smart
+# Mode when soil/climate is supplied.
 DEFAULT_WEIGHTS = {"suitability": 0.35, "regional": 0.30, "market": 0.35}
+
+# Simple Mode (no soil/climate): with the agronomic signal absent, what a region
+# has PROVENLY grown is the most trustworthy default — so regional leads and the
+# (absolute-price-biased) market signal is only a tie-breaker. Without this,
+# renormalizing DEFAULT_WEIGHTS would hand market the majority vote and bury
+# cheap-but-correct staples like maize/rice.
+SIMPLE_MODE_WEIGHTS = {"regional": 0.60, "market": 0.40}
 
 # Geometric-mean softening: a 0 score becomes this floor, so one weak dimension
 # strongly penalizes the total without zeroing it outright.
@@ -61,7 +71,7 @@ GOAL_MULTIPLIERS = {
 
 def _why(crop, modules) -> list[str]:
     why = []
-    if "suitability" in modules:
+    if "suitability" in modules and crop in modules["suitability"]:
         s = modules["suitability"][crop]
         if s["score"] >= 0.6:
             why.append(f"strong soil/climate match ({s['prob_pct']:.0f}% model confidence)")
@@ -78,7 +88,8 @@ def _why(crop, modules) -> list[str]:
 
 def _cautions(crop, modules) -> list[str]:
     cautions = []
-    if "suitability" in modules and modules["suitability"][crop]["score"] < 0.3:
+    if ("suitability" in modules and crop in modules["suitability"]
+            and modules["suitability"][crop]["score"] < 0.3):
         cautions.append("weak agronomic match for this soil/climate")
     if "regional" in modules:
         r = modules["regional"][crop]
@@ -87,6 +98,17 @@ def _cautions(crop, modules) -> list[str]:
     if "market" in modules and modules["market"][crop]["risk_level"] == "high":
         cautions.append("high price volatility")
     return cautions
+
+
+def _enrich(rec: dict, modules: dict, state, district, season) -> dict:
+    """Attach tradition standing + our yield prediction + price outlook to a rec."""
+    crop = rec["crop"]
+    reg = modules.get("regional", {}).get(crop, {})
+    rec["traditional"] = {"years_grown": int(reg.get("years_grown", 0) or 0),
+                          "level": reg.get("level", "none")}
+    rec["yield"] = predict_yield(state, district, season, crop, year=2016)
+    rec["price_outlook"] = price_outlook(state, crop)
+    return rec
 
 
 def recommend(state: str, district: str | None = None, season: str | None = None,
@@ -103,29 +125,35 @@ def recommend(state: str, district: str | None = None, season: str | None = None
     if features:  # Smart Mode — soil/climate present
         modules["suitability"] = suitability_scores(features, crops)
 
-    # 2. weights: keep available modules, apply goal, renormalize
-    w = {m: (weights or DEFAULT_WEIGHTS).get(m, 0.0) for m in modules}
+    # 2. base weights: explicit override > DEFAULT (Smart) > SIMPLE_MODE (no soil).
+    #    Then apply goal multipliers and renormalize over the modules that ran.
+    base = weights or (DEFAULT_WEIGHTS if "suitability" in modules else SIMPLE_MODE_WEIGHTS)
+    w = {m: base.get(m, 0.0) for m in modules}
     for m, mult in GOAL_MULTIPLIERS.get(goal or "", {}).items():
         if m in w:
             w[m] *= mult
     total = sum(w.values()) or 1.0
     w = {m: round(v / total, 4) for m, v in w.items()}
 
-    # 3. score + rank
+    # 3. score + rank. A crop is scored only on the modules that actually cover
+    #    it (suitability omits crops outside the soil model); per-crop weights are
+    #    renormalized over those, so a missing term degrades instead of zeroing.
     scored = []
     for c in crops:
-        breakdown = {m: modules[m][c]["score"] for m in w}
-        score = _fuse(breakdown, w, method)
-        scored.append((c, score, breakdown))
+        avail = {m: modules[m][c]["score"] for m in w if c in modules[m]}
+        cw_total = sum(w[m] for m in avail) or 1.0
+        cw = {m: w[m] / cw_total for m in avail}
+        score = _fuse(avail, cw, method)
+        scored.append((c, score, avail))
     scored.sort(key=lambda t: t[1], reverse=True)
 
-    recommendations = [{
+    recommendations = [_enrich({
         "crop": c,
         "score": score,
         "breakdown": breakdown,
         "why": _why(c, modules),
         "cautions": _cautions(c, modules),
-    } for c, score, breakdown in scored[:top_k]]
+    }, modules, state, district, season) for c, score, breakdown in scored[:top_k]]
 
     return {
         "modules_used": sorted(w.keys()),
