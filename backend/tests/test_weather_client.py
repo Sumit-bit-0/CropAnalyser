@@ -15,13 +15,12 @@ def test_any_and_blank_default_to_all_twelve():
     assert season_months(None) == tuple(range(1, 13))
 
 
-# append to backend/tests/test_weather_client.py
 import pytest
 import analysis.weather_client as wc
 
 
 # Two calendar years of canned daily data: Jan all warm, Jun-Oct (kharif) hot,
-# precip 1mm/day -> ~365mm/year.
+# precip 2.0mm per sampled day, 2 samples/month -> 12*2*2.0 = 48mm/year
 def _fake_daily():
     times, temp, hum, rain = [], [], [], []
     for year in (2023, 2024):

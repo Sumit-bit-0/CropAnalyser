@@ -59,7 +59,15 @@ def _fetch_archive(lat: float, lon: float, start_date: str, end_date: str) -> di
 
 
 def seasonal_climate(lat: float, lon: float, season) -> dict:
-    """Location's typical season climate. Cached by ~0.1deg coords + season."""
+    """Return the location's typical climate for the season.
+
+    temperature and humidity are averaged over the season's calendar months;
+    rainfall is the ANNUAL total (mm/year), NOT filtered to the season, because
+    cumulative annual precipitation is the agronomically relevant metric. The
+    returned dict's keys are a subset of {temperature, humidity, rainfall} —
+    a dimension is omitted if the archive lacks it, so callers must use .get().
+    Cached by ~0.1-degree coordinates + season name. Raises WeatherUnavailable.
+    """
     return _seasonal_cached(round(lat, 1), round(lon, 1), (season or "").strip().lower())
 
 
@@ -87,7 +95,7 @@ def _seasonal_cached(lat: float, lon: float, season: str) -> dict:
 
     # rainfall: total per calendar year, averaged across years (annual mm)
     rain = daily.get("precipitation_sum")
-    if rain:
+    if rain is not None:
         per_year: dict = {}
         for t, v in zip(times, rain):
             if v is not None:
