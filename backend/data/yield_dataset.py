@@ -51,3 +51,36 @@ def build_frame() -> pd.DataFrame:
     df = clip_outliers(df)
     keep = eligible_crops(df)
     return df[df["canonical_crop"].isin(keep)].reset_index(drop=True)
+
+
+def fit_vocabs(df: pd.DataFrame) -> dict:
+    """Per-categorical {value: id}; ids start at 1, 0 reserved for unknown."""
+    vocabs = {}
+    for col in CATEGORICALS:
+        uniques = sorted(df[col].astype(str).unique())
+        vocabs[col] = {v: i + 1 for i, v in enumerate(uniques)}
+    return vocabs
+
+
+def encode(df: pd.DataFrame, vocabs: dict) -> pd.DataFrame:
+    """Map categoricals to int ids (unknown -> 0). Returns a new frame of codes."""
+    out = pd.DataFrame(index=df.index)
+    for col in CATEGORICALS:
+        out[col] = df[col].astype(str).map(vocabs[col]).fillna(0).astype("int64")
+    return out
+
+
+def fit_target_scalers(df: pd.DataFrame) -> dict:
+    """Per-crop {mean, std} of crop_yield for standardization."""
+    scalers = {}
+    for crop, sub in df.groupby("canonical_crop"):
+        mean = float(sub["crop_yield"].mean())
+        std = float(sub["crop_yield"].std(ddof=0)) or 1.0
+        scalers[crop] = {"mean": mean, "std": std}
+    return scalers
+
+
+def scale_targets(df: pd.DataFrame, scalers: dict) -> pd.Series:
+    means = df["canonical_crop"].map(lambda c: scalers[c]["mean"])
+    stds = df["canonical_crop"].map(lambda c: scalers[c]["std"])
+    return (df["crop_yield"] - means) / stds
