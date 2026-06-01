@@ -23,7 +23,7 @@ _SEASONS = {
     "zaid": (3, 4, 5, 6),
     "winter": (12, 1, 2),
     "autumn": (9, 10, 11),
-    "whole year": tuple(range(1, 13)),
+    "whole year": tuple(range(1, 13)),  # DB stores "Whole Year" (two words)
 }
 
 
@@ -32,4 +32,8 @@ class WeatherUnavailable(Exception):
 
 
 def season_months(season) -> tuple:
+    """Calendar month numbers (1–12) for an India agronomic season name.
+
+    Case-insensitive; strips whitespace. Unknown/blank/None -> all 12 months.
+    """
     return _SEASONS.get((season or "").strip().lower(), tuple(range(1, 13)))
