@@ -145,6 +145,9 @@ def recommend(state: str, district: str | None = None, season: str | None = None
             w[m] *= mult
     total = sum(w.values()) or 1.0
     keys = list(w.keys())
+    assert keys, "no modules to weight (regional+market are always present)"
+    # Round each weight; the last key (by dict insertion order) absorbs the
+    # rounding residual so the weights always sum to exactly 1.0.
     rounded = {m: round(w[m] / total, 4) for m in keys[:-1]}
     rounded[keys[-1]] = round(1.0 - sum(rounded.values()), 4)
     w = rounded
