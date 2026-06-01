@@ -72,3 +72,16 @@ def test_target_scaling_is_per_crop_and_invertible():
     approx = z[df["canonical_crop"] == "sugarcane"] * s["std"] + s["mean"]
     assert np.allclose(approx.values,
                        df.loc[df["canonical_crop"] == "sugarcane", "crop_yield"].values, atol=1e-6)
+
+
+import torch
+from models.yield_mlp import YieldMLP
+
+
+def test_yield_mlp_forward_shape():
+    vocab_sizes = {"state": 5, "district": 50, "season": 6, "canonical_crop": 20}
+    model = YieldMLP(vocab_sizes)
+    cats = {k: torch.randint(0, v + 1, (8,)) for k, v in vocab_sizes.items()}
+    year = torch.randn(8, 1)
+    out = model(cats, year)
+    assert out.shape == (8,)
