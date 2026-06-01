@@ -34,11 +34,15 @@ def _csv_path() -> Path:
 
 
 def crop_envelopes() -> dict:
-    """Per-crop {dim: (mean, std)} for the 22 soil-model crops. Cached."""
+    """Per-crop {dim: (mean, std)} for the soil-model crops (those with a
+    non-None suitability label in the catalog). Cached."""
     global _ENVELOPES
     if _ENVELOPES is not None:
         return _ENVELOPES
     df = pd.read_csv(_csv_path())
+    missing = [d for d in _DIMS if d not in df.columns]
+    if missing:
+        raise ValueError(f"Crop_recommendation.csv missing columns: {missing}")
     df["_label"] = df["label"].astype(str).str.strip().str.lower()
     env = {}
     for crop, meta in CANONICAL_CROPS.items():
