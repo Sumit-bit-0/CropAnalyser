@@ -32,17 +32,18 @@ from analysis.suitability import suitability_scores
 from analysis.market_profitability import market_profitability_scores
 from analysis.yield_predict import predict_yield
 from analysis.price_outlook import price_outlook
+from analysis.weather_fit import weather_fit_scores
 
 # Default weights over the three implemented modules (sum to 1.0), used in Smart
 # Mode when soil/climate is supplied.
-DEFAULT_WEIGHTS = {"suitability": 0.35, "regional": 0.30, "market": 0.35}
+DEFAULT_WEIGHTS = {"suitability": 0.30, "regional": 0.25, "market": 0.30, "weather": 0.15}
 
 # Simple Mode (no soil/climate): with the agronomic signal absent, what a region
 # has PROVENLY grown is the most trustworthy default — so regional leads and the
 # (absolute-price-biased) market signal is only a tie-breaker. Without this,
 # renormalizing DEFAULT_WEIGHTS would hand market the majority vote and bury
 # cheap-but-correct staples like maize/rice.
-SIMPLE_MODE_WEIGHTS = {"regional": 0.60, "market": 0.40}
+SIMPLE_MODE_WEIGHTS = {"regional": 0.50, "market": 0.30, "weather": 0.20}
 
 # Geometric-mean softening: a 0 score becomes this floor, so one weak dimension
 # strongly penalizes the total without zeroing it outright.
@@ -83,6 +84,9 @@ def _why(crop, modules) -> list[str]:
         m = modules["market"][crop]
         if m["score"] >= 0.6 and m["recent_price"]:
             why.append(f"favorable market: ~₹{m['recent_price']:.0f}/quintal ({m['risk_level']} volatility)")
+    if "weather" in modules and crop in modules["weather"]:
+        if modules["weather"][crop]["score"] >= 0.6:
+            why.append("climate well-suited for this season")
     return why
 
 
@@ -97,6 +101,9 @@ def _cautions(crop, modules) -> list[str]:
             cautions.append("no local growing history")
     if "market" in modules and modules["market"][crop]["risk_level"] == "high":
         cautions.append("high price volatility")
+    if ("weather" in modules and crop in modules["weather"]
+            and modules["weather"][crop]["score"] <= 0.3):
+        cautions.append("seasonal climate is marginal for this crop")
     return cautions
 
 
@@ -125,6 +132,10 @@ def recommend(state: str, district: str | None = None, season: str | None = None
     if features:  # Smart Mode — soil/climate present
         modules["suitability"] = suitability_scores(features, crops)
 
+    wf = weather_fit_scores(state, district, season, crops)
+    if wf:  # only include when it actually ran (coords ok + API up)
+        modules["weather"] = wf
+
     # 2. base weights: explicit override > DEFAULT (Smart) > SIMPLE_MODE (no soil).
     #    Then apply goal multipliers and renormalize over the modules that ran.
     base = weights or (DEFAULT_WEIGHTS if "suitability" in modules else SIMPLE_MODE_WEIGHTS)
@@ -133,7 +144,10 @@ def recommend(state: str, district: str | None = None, season: str | None = None
         if m in w:
             w[m] *= mult
     total = sum(w.values()) or 1.0
-    w = {m: round(v / total, 4) for m, v in w.items()}
+    keys = list(w.keys())
+    rounded = {m: round(w[m] / total, 4) for m in keys[:-1]}
+    rounded[keys[-1]] = round(1.0 - sum(rounded.values()), 4)
+    w = rounded
 
     # 3. score + rank. A crop is scored only on the modules that actually cover
     #    it (suitability omits crops outside the soil model); per-crop weights are
