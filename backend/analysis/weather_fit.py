@@ -56,3 +56,37 @@ def crop_envelopes() -> dict:
                          max(float(sub[d].std(ddof=0)), _STD_FLOOR)) for d in _DIMS}
     _ENVELOPES = env
     return env
+
+
+def _fit(score: float) -> str:
+    return "good" if score >= 0.66 else "fair" if score >= 0.33 else "poor"
+
+
+def weather_fit_scores(state, district, season, crops=None) -> dict:
+    crops = list(crops) if crops else WHITELIST
+    coords = get_centroid(state, district)
+    if not coords:
+        return {}
+    try:
+        climate = seasonal_climate(coords[0], coords[1], season)
+    except Exception:
+        return {}  # never block a recommendation on weather
+
+    env = crop_envelopes()
+    raw = {}  # crop -> (similarity, climate-detail)
+    for c in crops:
+        e = env.get(c)
+        if not e:
+            continue
+        dims = [d for d in _DIMS if d in climate]
+        if not dims:
+            continue
+        zs = [(climate[d] - e[d][0]) / e[d][1] for d in dims]
+        sim = math.exp(-0.5 * sum(z * z for z in zs) / len(zs))
+        raw[c] = (sim, {d: round(climate[d], 1) for d in dims})
+    if not raw:
+        return {}
+
+    top = max(s for s, _ in raw.values()) or 1.0
+    return {c: {"score": round(s / top, 3), "fit": _fit(s / top), "climate": detail}
+            for c, (s, detail) in raw.items()}
