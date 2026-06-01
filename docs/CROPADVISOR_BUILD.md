@@ -273,6 +273,27 @@ Verified live on Bihar/Begusarai: sugarcane / banana / potato / rice / wheat, al
 
 ---
 
+## 14. Phase 2 — live Weather Fit term (2026-06-01)
+
+A 4th fusion module that makes recommendations respond to the location's actual climate, with **no extra input from the farmer** (it's location-derived, so it runs in **both Simple and Smart Mode** — Simple Mode's first agronomic signal). Spec: `docs/superpowers/specs/2026-06-01-weather-fit-module-design.md`; plan: `docs/superpowers/plans/2026-06-01-weather-fit-module.md`.
+
+### How it works
+- **`analysis/weather_client.py`** — `seasonal_climate(lat, lon, season)` pulls the location's typical climate from the **Open-Meteo Archive API** (ERA5; free, no key; stdlib `urllib`, **zero new dependencies**). Season → calendar months (Kharif Jun–Oct, Rabi Nov–Mar, etc.); temperature & humidity are averaged over the season's months across the last ~5 years. `@lru_cache` keyed on ~0.1° coords + season; ~4s timeout, one retry; raises `WeatherUnavailable` on any failure so the caller can skip cleanly.
+- **`analysis/weather_fit.py`** — `weather_fit_scores(state, district, season, crops)`. Resolves coords via the existing `geo.get_centroid` (district centroid → state fallback). Builds per-crop **climate envelopes** (mean/std) from `Crop_recommendation.csv` for the 22 soil-model crops. Score = Gaussian `exp(-½·mean(z²))` over the climate dims, **max-normalized** to 1.0 like the other modules. Returns `{}` (whole module skipped) when coords can't resolve or the API is down — a recommendation is never blocked. The 14 expansion crops (wheat/sugarcane/…) have no envelope and are omitted → fusion degrades them per-crop.
+- **`analysis/fusion.py`** — weather blended at **0.15** (Smart: suitability .30/regional .25/market .30/weather .15) and **0.20** (Simple: regional .50/market .30/weather .20). Added only when it actually ran (`if wf:`); per-crop weight renormalization handles crops without a weather term. New why-line "climate well-suited for this season" / caution "seasonal climate is marginal for this crop".
+- **Card:** a cyan **Weather** bar (`frontend/src/pages/CropAdvisor.jsx`), rendered automatically from `breakdown.weather`.
+
+### ⚠️ Key correction (found in live verification)
+The scorer uses **temperature + humidity ONLY**. The first cut included rainfall, but `Crop_recommendation.csv`'s `rainfall` column (~85–240) is **not** real annual mm — Open-Meteo returns ~1250 mm for Bihar. That ~20σ mismatch made `exp(-½·z²)` underflow to ~0 for every crop, collapsing the signal to a near-binary 0/1 and inverting the ranking (it pushed soil-model crops *below* the expansion crops that have no weather term). Temperature and humidity are genuinely comparable between the CSV and live data, so rainfall was dropped. `seasonal_climate` still returns a real annual `rainfall` value, but the scorer ignores it.
+
+### Verified live (Bihar/Begusarai, Kharif)
+`modules_used = [market, regional, weather]`; banana scores weather **1.00** (29°C/78% ≈ banana's 27°C/80%), with a real gradient down through mungbean 0.32 / pigeonpeas 0.22 / maize 0.07 / rice 0.05. Top picks are legitimate Bihar-Kharif crops (pigeonpeas, mungbean, ragi, jute, maize, rice), regional history leading with weather as a sensible secondary nudge. 124 backend tests green; `npm run build` clean.
+
+### Test design note
+`tests/conftest.py` has an **autouse fixture** defaulting the weather module OFF, so the suite never hits the network and stays deterministic; the one weather-integration test in `test_fusion.py` overrides it with a stub. `weather_client`/`weather_fit` unit tests monkeypatch `_fetch_archive`/`seasonal_climate`/`get_centroid` directly.
+
+---
+
 ## How to run (dev)
 
 ```powershell
