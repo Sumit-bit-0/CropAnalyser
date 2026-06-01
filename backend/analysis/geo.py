@@ -66,3 +66,28 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     dlat, dlon = lat2 - lat1, lon2 - lon1
     a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
     return 2 * 6371.0 * asin(sqrt(a))
+
+
+def locate(lat: float, lon: float) -> dict:
+    """Reverse-locate GPS coords to the nearest known state, refined to the
+    nearest district when the district-centroid CSV is bundled. Names are
+    title-cased so they line up with the app's dropdowns / inputs."""
+    best_state, best_state_d = None, float("inf")
+    for s, (la, lo) in STATE_CENTROIDS.items():
+        d = haversine(lat, lon, la, lo)
+        if d < best_state_d:
+            best_state_d, best_state = d, s
+    result = {"state": best_state.title() if best_state else None,
+              "district": None, "distance_km": round(best_state_d, 1)}
+
+    districts = _load_district_centroids()
+    if districts:
+        best_key, best_d = None, float("inf")
+        for (s, dist), (la, lo) in districts.items():
+            dd = haversine(lat, lon, la, lo)
+            if dd < best_d:
+                best_d, best_key = dd, (s, dist)
+        if best_key:
+            result = {"state": best_key[0].title(), "district": best_key[1].title(),
+                      "distance_km": round(best_d, 1)}
+    return result

@@ -1,4 +1,8 @@
-from analysis.geo import haversine, get_centroid
+from fastapi.testclient import TestClient
+from analysis.geo import haversine, get_centroid, locate
+from main import app
+
+client = TestClient(app)
 
 
 def test_haversine_known_distance():
@@ -20,3 +24,26 @@ def test_get_centroid_state_fallback():
 
 def test_get_centroid_unknown_state_is_none():
     assert get_centroid("Atlantis", "Nowhere") is None
+
+
+def test_locate_punjab_coords():
+    # Ludhiana, Punjab ~ (30.90, 75.85)
+    r = locate(30.90, 75.85)
+    assert r["state"] == "Punjab"
+    assert r["district"]            # district resolved from the bundled CSV
+    assert r["distance_km"] >= 0
+
+
+def test_locate_karnataka_coords():
+    # Bengaluru ~ (12.97, 77.59)
+    assert locate(12.97, 77.59)["state"] == "Karnataka"
+
+
+def test_geo_locate_endpoint():
+    r = client.get("/api/geo/locate", params={"lat": 30.90, "lon": 75.85})
+    assert r.status_code == 200
+    assert r.json()["state"] == "Punjab"
+
+
+def test_geo_locate_requires_coords():
+    assert client.get("/api/geo/locate").status_code == 422
