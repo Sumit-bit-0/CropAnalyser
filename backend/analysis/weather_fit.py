@@ -3,7 +3,7 @@
 
 Scores each crop by how well the location's seasonal climate (from Open-Meteo,
 via analysis.weather_client) matches the crop's climatic envelope, derived from
-Crop_recommendation.csv. Gaussian z-distance over temperature/humidity/rainfall,
+Crop_recommendation.csv. Gaussian z-distance over temperature/humidity,
 max-normalized to 1.0 like the other modules. Only the 22 soil-model crops have
 envelopes; the rest are omitted so fusion degrades them per-crop. Returns {} (the
 whole module skipped) when coordinates can't be resolved or the weather call
@@ -19,7 +19,10 @@ from analysis.crop_catalog import CANONICAL_CROPS, WHITELIST
 from analysis.geo import get_centroid
 from analysis.weather_client import seasonal_climate
 
-_DIMS = ("temperature", "humidity", "rainfall")
+# rainfall is intentionally excluded: the Crop_recommendation.csv rainfall column
+# is not real annual mm and is incomparable to live precipitation (it collapsed the
+# weather signal in live testing). temperature + humidity are directly comparable.
+_DIMS = ("temperature", "humidity")
 _STD_FLOOR = 1e-6
 _CSV_CANDIDATES = [DATA_RAW / "Crop_recommendation.csv",
                    Path(r"E:\DataSETAgri\Crop_recommendation.csv")]

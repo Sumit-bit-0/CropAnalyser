@@ -19,8 +19,10 @@ def test_envelopes_cover_soil_crops_with_sane_values():
     rice_temp_mean, rice_temp_std = env["rice"]["temperature"]
     assert 18 <= rice_temp_mean <= 30
     assert rice_temp_std > 0
-    rice_rain_mean, _ = env["rice"]["rainfall"]
-    assert rice_rain_mean > 150  # rice rainfall ~200mm in this dataset
+    rice_hum_mean, _ = env["rice"]["humidity"]
+    assert 60 <= rice_hum_mean <= 95  # rice humidity ~82% in this dataset
+    # rainfall is intentionally excluded (CSV scale incompatible with live data)
+    assert "rainfall" not in env["rice"]
     # expansion crops (no soil label) get no envelope
     assert "wheat" not in env and "sugarcane" not in env
 
@@ -32,7 +34,7 @@ import analysis.weather_fit as wf
 @pytest.mark.skipif(not _csv_exists(), reason="Crop_recommendation.csv not found")
 def test_scores_high_near_envelope_low_far(monkeypatch):
     env = wf.crop_envelopes()
-    rice = {d: env["rice"][d][0] for d in ("temperature", "humidity", "rainfall")}
+    rice = {d: env["rice"][d][0] for d in ("temperature", "humidity")}
     monkeypatch.setattr(wf, "get_centroid", lambda s, d: (25.7, 85.3))
     # location climate == rice's envelope center -> rice should score the max (1.0)
     monkeypatch.setattr(wf, "seasonal_climate", lambda lat, lon, season: rice)
