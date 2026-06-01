@@ -70,18 +70,27 @@ recommend(state, district, season, …)
 `weather_fit_scores(state, district, season, crops=None) -> {crop: {...}}`
 
 - `crop_envelopes()` (module-level cache): reads `Crop_recommendation.csv`, groups by
-  `label`, computes per-crop `{temp:(mean,std), humidity:(mean,std), rain:(mean,std)}`
+  `label`, computes per-crop `{temperature:(mean,std), humidity:(mean,std)}`
   for the **22 suitability crops** mapped through `CANONICAL_CROPS[c]["suitability"]`.
   `std` floored to a small epsilon to avoid divide-by-zero.
 - Resolve coords with `analysis.geo.get_centroid(state, district)`. If `None` →
   return `{}` (module skipped).
 - Fetch `seasonal_climate(...)`. On exception → return `{}` (graceful skip; log once).
 - For each candidate crop **that has an envelope**:
-  - `z_dim = (loc_value − mean) / std` for temp, humidity, annual_rain
+  - `z_dim = (loc_value − mean) / std` for temperature, humidity
   - `raw = exp(-0.5 * mean(z_dim²))`  → smooth 0–1 similarity
 - **Max-normalize** so the best-fitting candidate = 1.0 (consistent with
   `regional_fit` / `suitability`).
-- Return `{crop: {"score": 0–1, "fit": "good|fair|poor", "detail": {temp,humidity,rain z's or deltas}}}`.
+- Return `{crop: {"score": 0–1, "fit": "good|fair|poor", "climate": {dim: value}}}`.
+
+> **Correction (live-verification finding, 2026-06-01):** the scorer uses
+> **temperature + humidity only** — `_DIMS = ("temperature", "humidity")`. Rainfall
+> was dropped because the Kaggle CSV's `rainfall` column (values ~85–240) is on a
+> different scale from real annual precipitation (Open-Meteo returns ~1250 mm for
+> Bihar): every crop's rainfall z-score blew up to ~20σ, collapsing the whole signal
+> to a near-binary 0/1 and inverting the ranking. `seasonal_climate` still returns a
+> `rainfall` value (real annual mm) but the scorer ignores it. Temperature and
+> humidity are genuinely comparable between the CSV and live data and discriminate well.
 - Crops with **no envelope** (the 14 expansion crops, `suitability: None`) are
   **omitted** → fusion degrades them to regional+market(+suitability) per-crop.
 
@@ -115,10 +124,11 @@ recommend(state, district, season, …)
 
 ## Honesty / correctness notes
 
-- `Crop_recommendation.csv` `rainfall` reads as an **annual total (mm)**, so the
-  location's rainfall feature is computed as an **annual** total; temperature and
-  humidity use **season-month averages**. This keeps each dimension comparable
-  rather than mixing seasonal vs annual.
+- **Rainfall is excluded from scoring** (see Correction in Component 2): the CSV's
+  rainfall column is not real annual mm and is incomparable to live precipitation,
+  so it collapsed the signal. Only **temperature and humidity** (season-month
+  averages) drive the weather score — both are realistic and directly comparable
+  between the CSV and Open-Meteo.
 - The weather term and the suitability term overlap in crop coverage (both the 22
   CSV crops) but use different inputs: suitability = full 7-input MLP on
   **user-typed** climate+soil; weather = **live, location-true** climate only. In

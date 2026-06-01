@@ -82,3 +82,18 @@ def test_additive_method_reproduces_the_flaw():
                     goal="max_profit", top_k=len(WHITELIST))
     assert geo["recommendations"][0]["crop"] != top["crop"]
     assert geo["recommendations"][0]["breakdown"]["regional"] > 0.0
+
+
+def test_weather_module_integrates_and_degrades_per_crop(monkeypatch):
+    import analysis.fusion as fz
+    stub = {"rice": {"score": 0.9, "fit": "good", "climate": {}},
+            "maize": {"score": 0.5, "fit": "fair", "climate": {}}}
+    monkeypatch.setattr(fz, "weather_fit_scores", lambda *a, **k: stub)
+    out = fz.recommend("Punjab", "Ludhiana", crops=["rice", "maize", "wheat"], top_k=3)
+    assert "weather" in out["modules_used"]
+    assert abs(sum(out["weights_used"].values()) - 1.0) < 1e-6
+    crops = {r["crop"] for r in out["recommendations"]}
+    assert "wheat" in crops  # no weather score -> still recommended (per-crop degrade)
+    for r in out["recommendations"]:
+        if r["crop"] in stub:
+            assert "weather" in r["breakdown"]

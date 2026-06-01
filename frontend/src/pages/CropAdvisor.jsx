@@ -19,6 +19,7 @@ const MODULES = [
   ['suitability', 'Soil/Climate', 'bg-emerald-500'],
   ['regional', 'Regional', 'bg-sky-500'],
   ['market', 'Market', 'bg-amber-500'],
+  ['weather', 'Weather', 'bg-cyan-500'],
 ]
 const RANK_BADGE = ['bg-green-600', 'bg-green-500', 'bg-green-400', 'bg-gray-400', 'bg-gray-400']
 const TREND = { rising: '↗', flat: '→', falling: '↘' }
