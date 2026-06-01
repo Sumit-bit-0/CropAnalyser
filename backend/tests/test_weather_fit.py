@@ -56,6 +56,7 @@ def test_weather_failure_returns_empty(monkeypatch):
     assert wf.weather_fit_scores("Bihar", "Begusarai", "Kharif") == {}
 
 
+@pytest.mark.skipif(not _csv_exists(), reason="Crop_recommendation.csv not found")
 def test_expansion_crop_omitted(monkeypatch):
     monkeypatch.setattr(wf, "get_centroid", lambda s, d: (25.7, 85.3))
     monkeypatch.setattr(wf, "seasonal_climate",

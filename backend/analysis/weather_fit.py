@@ -59,7 +59,8 @@ def crop_envelopes() -> dict:
 
 
 def _fit(score: float) -> str:
-    return "good" if score >= 0.66 else "fair" if score >= 0.33 else "poor"
+    """good/fair/poor band for the max-normalized score (relative to the query set)."""
+    return "good" if score >= 2 / 3 else "fair" if score >= 1 / 3 else "poor"
 
 
 def weather_fit_scores(state, district, season, crops=None) -> dict:
@@ -72,14 +73,14 @@ def weather_fit_scores(state, district, season, crops=None) -> dict:
     except Exception:
         return {}  # never block a recommendation on weather
 
+    dims = [d for d in _DIMS if d in climate]
+    if not dims:
+        return {}
     env = crop_envelopes()
     raw = {}  # crop -> (similarity, climate-detail)
     for c in crops:
         e = env.get(c)
         if not e:
-            continue
-        dims = [d for d in _DIMS if d in climate]
-        if not dims:
             continue
         zs = [(climate[d] - e[d][0]) / e[d][1] for d in dims]
         sim = math.exp(-0.5 * sum(z * z for z in zs) / len(zs))
