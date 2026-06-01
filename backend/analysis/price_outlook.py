@@ -59,4 +59,4 @@ def price_outlook(state: str, crop: str) -> dict:
         price, trend = _historical(state, commodity)
         if price is None:
             return {"price": None, "trend": None, "horizon_months": 0, "source": "none"}
-        return {"price": price, "trend": trend, "horizon_months": 0, "source": "historical"}
+        return {"price": round(price, 2), "trend": trend, "horizon_months": 0, "source": "historical"}
