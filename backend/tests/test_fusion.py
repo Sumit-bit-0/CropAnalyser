@@ -2,6 +2,7 @@
 import pytest
 
 from analysis.fusion import recommend, DEFAULT_WEIGHTS
+from analysis.crop_catalog import WHITELIST
 from database import table_exists
 
 RICE_SOIL = {"N": 90, "P": 42, "K": 43, "temperature": 26,
@@ -19,7 +20,9 @@ def test_smart_mode_uses_all_three_modules():
     assert scores == sorted(scores, reverse=True)
     for r in recs:
         assert 0.0 <= r["score"] <= 1.0
-        assert set(r["breakdown"]) == set(out["modules_used"])
+        # breakdown is per-crop: always has regional+market, suitability only
+        # for crops the soil model knows; never more than the modules that ran
+        assert {"regional", "market"} <= set(r["breakdown"]) <= set(out["modules_used"])
         assert "why" in r and "cautions" in r
 
 
@@ -56,7 +59,7 @@ def test_geometric_ranking_demotes_agronomically_absurd_crop():
     ~0 suitability+regional in Punjab) must NOT top the list under geometric
     fusion, even chasing profit; a real Punjab crop (rice) should rank above it."""
     out = recommend("Punjab", "Ludhiana", features=RICE_SOIL,
-                    goal="max_profit", top_k=20)
+                    goal="max_profit", top_k=len(WHITELIST))
     assert out["method"] == "geometric"
     ranking = [r["crop"] for r in out["recommendations"]]
     top3 = ranking[:3]
@@ -65,10 +68,17 @@ def test_geometric_ranking_demotes_agronomically_absurd_crop():
 
 
 def test_additive_method_reproduces_the_flaw():
-    """Under the old additive rule, coffee's lone strong market score tops the
-    full list — documenting exactly the flaw geometric fusion fixes."""
+    """Under the old additive rule, a crop with a lone strong market score floats
+    to the very top despite NO local track record (regional fit = 0) — exactly the
+    flaw geometric fusion fixes by demoting it."""
     add = recommend("Punjab", "Ludhiana", features=RICE_SOIL,
-                    goal="max_profit", top_k=20, method="additive")
-    ranking = [r["crop"] for r in add["recommendations"]]
+                    goal="max_profit", top_k=len(WHITELIST), method="additive")
     assert add["method"] == "additive"
-    assert ranking[0] == "coffee"
+    top = add["recommendations"][0]
+    # the additive winner is surfaced by market alone — unproven in Punjab
+    assert top["breakdown"]["regional"] == 0.0
+    # geometric fusion does NOT crown a crop with zero regional history
+    geo = recommend("Punjab", "Ludhiana", features=RICE_SOIL,
+                    goal="max_profit", top_k=len(WHITELIST))
+    assert geo["recommendations"][0]["crop"] != top["crop"]
+    assert geo["recommendations"][0]["breakdown"]["regional"] > 0.0

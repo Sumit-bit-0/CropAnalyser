@@ -18,6 +18,16 @@ def test_common_crops_have_price_and_risk():
     assert s["rice"]["risk_level"] in {"low", "medium", "high"}
 
 
+def test_yield_weighting_lifts_high_yield_staple_over_low_yield_pulse():
+    # rice is cheaper per quintal than mungbean but far higher yielding, so on a
+    # per-hectare revenue basis rice must out-score mungbean (the v1 bug was the
+    # reverse). Also exposes typical_yield for the explanation layer.
+    s = market_profitability_scores()
+    assert s["rice"]["recent_price"] < s["mungbean"]["recent_price"]   # cheaper/q
+    assert s["rice"]["typical_yield"] > s["mungbean"]["typical_yield"]  # higher yield
+    assert s["rice"]["score"] > s["mungbean"]["score"]                  # but wins/ha
+
+
 def test_crops_subset_filter():
     s = market_profitability_scores(crops=["rice", "maize", "cotton"])
     assert set(s) == {"rice", "maize", "cotton"}

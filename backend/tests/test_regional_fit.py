@@ -19,11 +19,13 @@ def test_returns_all_requested_crops_in_range():
         assert {"score", "level", "years_grown", "total_production", "avg_yield"} <= set(v)
 
 
-def test_ludhiana_rice_is_top_and_normalized():
+def test_ludhiana_wheat_rice_belt_normalized():
     scores = regional_fit_scores("Punjab", "Ludhiana")
-    # rice dominates Ludhiana's history -> should be the normalized top (1.0)
-    assert scores["rice"]["score"] == 1.0
-    assert scores["rice"]["level"] == "district"
+    # Ludhiana is the Punjab wheat-rice belt: wheat edges rice as the top crop,
+    # with rice a very close, strongly-proven second. Both score near 1.0.
+    assert scores["wheat"]["score"] == 1.0
+    assert scores["rice"]["score"] > 0.9
+    assert scores["wheat"]["level"] == "district"
     assert scores["rice"]["years_grown"] > 0
     # the region's max is normalized to 1.0
     assert max(v["score"] for v in scores.values()) == 1.0

@@ -11,8 +11,8 @@ def _raw():
     return pd.DataFrame([
         # uppercase state, trailing whitespace, whitelist crop -> pigeonpeas
         ["ANDAMAN AND NICOBAR", "NICOBAR ISLANDS", 2000, "Kharif     ", "Arhar/Tur", 100.0, 250.0],
-        # valid crop but not in whitelist (no wheat in suitability data) -> canonical None
-        ["Punjab", "Ludhiana", 2010, "Rabi", "Wheat", 200.0, 600.0],
+        # valid crop with no catalog mapping at all -> canonical None
+        ["Punjab", "Ludhiana", 2010, "Rabi", "Coriander", 200.0, 600.0],
         ["Bihar", "Patna", 2011, "Kharif", "Maize", 50.0, 150.0],          # -> maize
         ["Goa", "North Goa", 2012, "Whole Year ", "Banana", 10.0, None],    # null production -> dropped
         ["Goa", "South Goa", 2012, "Kharif", "Rice", 0.0, 100.0],          # zero area -> dropped
@@ -34,8 +34,8 @@ def test_clean_history_normalizes_and_maps():
     assert arhar["crop_yield"] == 2.5                # 250 / 100
 
     assert out[out["crop"] == "Maize"].iloc[0]["canonical_crop"] == "maize"
-    # valid but non-whitelist crop -> NULL canonical
-    assert out[out["crop"] == "Wheat"].iloc[0]["canonical_crop"] is None
+    # crop with no catalog mapping -> NULL canonical
+    assert out[out["crop"] == "Coriander"].iloc[0]["canonical_crop"] is None
 
 
 @pytest.mark.skipif(not table_exists("district_crop_history"),

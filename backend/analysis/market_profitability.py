@@ -1,23 +1,37 @@
 """Market Profitability scorer for CropAdvisor (fusion input #2).
 
-Scores how favorable the market is for each whitelist crop, from the `prices`
-table via the catalog's market aliases. v1 signal = recent modal price level,
-risk-adjusted by price volatility, normalized so the best candidate = 1.0:
+Scores how favorable the market is for each candidate crop. v2 signal = gross
+revenue PER HECTARE — recent modal price × the crop's typical yield —
+risk-adjusted by price volatility and normalized so the best candidate = 1.0:
 
-    raw = recent_price * (1 - volatility_cv)        # high price, low volatility wins
-    score = raw / max(raw across candidates)
+    revenue = recent_price (₹/quintal) × typical_yield (per hectare)
+    raw     = revenue × (1 − volatility_cv)
+    score   = raw / max(raw across candidates)
 
-Prices are read NATIONALLY by default (market prices are largely national and
-state-level slices get sparse); pass `state` for a localized read. recent_price /
-avg_price / volatility / risk_level are returned for the explanation layer.
+Why per-hectare revenue, not absolute ₹/quintal (the v1 signal): a farmer plants
+an AREA, not a quintal. Absolute price made cheap-but-high-yield staples
+(rice/wheat/maize ~₹1800–2900/q) lose to expensive-but-low-yield crops
+(coffee ₹20,971/q) even where the staples dominate. Multiplying by typical yield
+restores the staples — e.g. rice now out-earns low-yield pulses per hectare, and
+sugarcane (≈53 t/ha) rises appropriately.
 
-KNOWN v1 LIMITATION: absolute ₹/quintal is a coarse profitability proxy — it
-favors intrinsically high-priced crops because we lack per-crop cost and
-comparable yield. The design's full "Price − Cost − Risk" needs cost data we
-don't have yet. The forward-looking LSTM price outlook is computed only for the
-final top crops (expensive per call), not here across all candidates.
+`typical_yield` is the NATIONAL MEDIAN of district_crop_history.crop_yield
+(median = robust to outliers). Prices are read NATIONALLY by default; pass
+`state` for a localized read. recent_price / avg_price / volatility / risk_level
+/ typical_yield are returned for the explanation layer.
+
+KNOWN LIMITATIONS:
+  - This is gross revenue, not profit — it ignores per-crop cost of cultivation.
+    The full "net profit/ha = (price × yield) − cost" needs a cost dataset we
+    don't have yet (CACP / DES). See docs roadmap; that is the next refinement.
+  - crop_yield units are inconsistent across crops in the source data (tonnes
+    for cereals, bales for cotton/jute, nuts for coconut), so revenue is inflated
+    for a few plantation/fibre crops. In practice those crops have little/no
+    regional history where it matters, so the geometric fusion floors them via
+    the regional term before the distortion can surface them. Crops with no yield
+    data at all fall back to a neutral median yield.
 """
-from database import query
+from database import query, table_exists
 from analysis.crop_catalog import CANONICAL_CROPS, WHITELIST
 
 
@@ -29,11 +43,28 @@ def _risk_level(cv: float) -> str:
     return "high"
 
 
+def _national_median_yields(canon_crops: list[str]) -> dict:
+    """National median crop_yield per canonical crop (empty if history absent)."""
+    if not canon_crops or not table_exists("district_crop_history"):
+        return {}
+    inlist = ",".join("?" * len(canon_crops))
+    df = query(f"""
+        SELECT canonical_crop,
+               percentile_cont(0.5) WITHIN GROUP (ORDER BY crop_yield) AS yld
+        FROM district_crop_history
+        WHERE canonical_crop IN ({inlist}) AND crop_yield > 0
+        GROUP BY canonical_crop
+    """, tuple(canon_crops))
+    return {r.canonical_crop: float(r.yld)
+            for r in df.itertuples(index=False) if r.yld and r.yld > 0}
+
+
 def market_profitability_scores(crops=None, state: str | None = None) -> dict:
     """Map of {canonical_crop: {score 0-1, recent_price, avg_price, volatility_cv, risk_level}}."""
     crops = list(crops) if crops else WHITELIST
     results = {c: {"score": 0.0, "recent_price": None, "avg_price": None,
-                   "volatility_cv": None, "risk_level": "unknown"} for c in crops}
+                   "volatility_cv": None, "risk_level": "unknown",
+                   "typical_yield": None} for c in crops}
 
     alias_to_canon = {a: c for c in crops for a in CANONICAL_CROPS[c]["market"]}
     aliases = list(alias_to_canon)
@@ -58,7 +89,13 @@ def market_profitability_scores(crops=None, state: str | None = None) -> dict:
     if df.empty:
         return results
 
-    # per-canonical: pool its market aliases, derive recent price + volatility
+    # typical yield per crop; neutral fallback (median of known yields) for crops
+    # with no yield data, so they're neither zeroed nor exploded.
+    yields = _national_median_yields(crops)
+    fallback_yield = (sorted(yields.values())[len(yields) // 2] if yields else 1.0)
+
+    # per-canonical: pool its market aliases, derive recent price + volatility,
+    # then weight by typical yield -> gross revenue per hectare.
     raw_scores = {}
     for canon in crops:
         sub = df[df["commodity"].isin(CANONICAL_CROPS[canon]["market"])]
@@ -69,7 +106,9 @@ def market_profitability_scores(crops=None, state: str | None = None) -> dict:
         avg_price = float(yearly.mean())
         std_price = float(yearly.std(ddof=0))
         cv = (std_price / avg_price) if avg_price else 0.0
-        raw = recent_price * max(0.0, 1.0 - cv)
+        yld = yields.get(canon, fallback_yield)
+        revenue = recent_price * yld
+        raw = revenue * max(0.0, 1.0 - cv)
         raw_scores[canon] = raw
         results[canon] = {
             "score": 0.0,  # filled after normalization
@@ -77,6 +116,7 @@ def market_profitability_scores(crops=None, state: str | None = None) -> dict:
             "avg_price": round(avg_price, 2),
             "volatility_cv": round(cv, 3),
             "risk_level": _risk_level(cv),
+            "typical_yield": round(yld, 3),
         }
 
     top = max(raw_scores.values(), default=0.0)

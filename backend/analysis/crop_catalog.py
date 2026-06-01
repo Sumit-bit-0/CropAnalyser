@@ -5,18 +5,23 @@ The three data sources speak different crop vocabularies:
   - Regional history  : "Crop Production data.csv" `Crop` (126, title-case)
   - Market prices     : `prices.commodity` (384, verbose names)
 
-There is no shared key, so CropAdvisor can only recommend crops that exist in
-ALL THREE. This module maps each canonical crop to its per-source aliases and
-defines the v1 whitelist (the intersection). Modules import CANONICAL_CROPS so
-every layer agrees on names; `validate()` checks every alias still exists in its
-source (run `python -m analysis.crop_catalog`).
+A crop is a valid CropAdvisor candidate when it has BOTH regional production
+history AND market prices. The soil/climate suitability model only knows 22
+crops (the Crop_recommendation.csv labels), so a crop that exists in history +
+market but NOT in that model carries `suitability: None` — it is recommended on
+regional + market evidence and simply skips the agronomic term (the fusion layer
+degrades per-crop). This is what lets staples the soil model never saw — wheat,
+sugarcane, potato, mustard — be recommended at all. Modules import
+CANONICAL_CROPS so every layer agrees on names; `validate()` checks every alias
+still exists in its source (run `python -m analysis.crop_catalog`).
 
-Excluded from v1 (present in suitability but not all sources):
+Excluded (present in the soil model but missing a market/production match):
   - kidneybeans : production = "Rajmash Kholar" (Rajma) but no clean market match
   - muskmelon   : market = "Karbuja (Musk Melon)" but no production-history crop
 """
 
-# canonical -> {suitability label, production Crop aliases, market commodity aliases}
+# canonical -> {suitability label (or None if outside the 22-crop soil model),
+#               production Crop aliases, market commodity aliases}
 CANONICAL_CROPS: dict[str, dict] = {
     "rice":        {"suitability": "rice",        "production": ["Rice", "Paddy"],
                     "market": ["Rice", "Paddy (Common)", "Paddy (Basmati)",
@@ -59,9 +64,47 @@ CANONICAL_CROPS: dict[str, dict] = {
                     "market": ["Pomegranate"]},
     "watermelon":  {"suitability": "watermelon",  "production": ["Water Melon"],
                     "market": ["Water Melon"]},
+
+    # --- Expansion: major Indian field crops with production history + market
+    # prices but OUTSIDE the 22-crop soil model (suitability=None). Without
+    # these, regions like Bihar/Begusarai could never see wheat/sugarcane/maize
+    # surface even though they dominate locally.
+    "wheat":       {"suitability": None, "production": ["Wheat"],
+                    "market": ["Wheat"]},
+    "sugarcane":   {"suitability": None, "production": ["Sugarcane"],
+                    "market": ["Sugarcane"]},
+    "potato":      {"suitability": None, "production": ["Potato"],
+                    "market": ["Potato"]},
+    "mustard":     {"suitability": None, "production": ["Rapeseed &Mustard"],
+                    "market": ["Mustard"]},
+    "onion":       {"suitability": None, "production": ["Onion"],
+                    "market": ["Onion"]},
+    "soyabean":    {"suitability": None, "production": ["Soyabean"],
+                    "market": ["Soyabean"]},
+    "groundnut":   {"suitability": None, "production": ["Groundnut"],
+                    "market": ["Groundnut"]},
+    "bajra":       {"suitability": None, "production": ["Bajra"],
+                    "market": ["Bajra (Pearl Millet/Cumbu)"]},
+    "jowar":       {"suitability": None, "production": ["Jowar"],
+                    "market": ["Jowar (Sorghum)"]},
+    "ragi":        {"suitability": None, "production": ["Ragi"],
+                    "market": ["Ragi (Finger Millet)"]},
+    "barley":      {"suitability": None, "production": ["Barley"],
+                    "market": ["Barley (Jau)"]},
+    "sunflower":   {"suitability": None, "production": ["Sunflower"],
+                    "market": ["Sunflower"]},
+    "sesamum":     {"suitability": None, "production": ["Sesamum"],
+                    "market": ["Sesamum (Sesame,Gingelly,Til)"]},
+    "turmeric":    {"suitability": None, "production": ["Turmeric"],
+                    "market": ["Turmeric"]},
+    "garlic":      {"suitability": None, "production": ["Garlic"],
+                    "market": ["Garlic"]},
+    "tapioca":     {"suitability": None, "production": ["Tapioca"],
+                    "market": ["Tapioca"]},
 }
 
-# v1 whitelist: canonical crops with confirmed coverage in all three sources.
+# Candidate crops: those with confirmed production history + market coverage.
+# (Some have suitability=None — scored on regional+market only.)
 WHITELIST: list[str] = sorted(CANONICAL_CROPS.keys())
 
 
@@ -79,7 +122,7 @@ def validate() -> dict:
 
     problems = []
     for crop, m in CANONICAL_CROPS.items():
-        if m["suitability"].lower() not in suit:
+        if m["suitability"] is not None and m["suitability"].lower() not in suit:
             problems.append(f"{crop}: suitability label '{m['suitability']}' not found")
         if not any(p in prod for p in m["production"]):
             problems.append(f"{crop}: no production alias {m['production']} found")
