@@ -45,7 +45,7 @@ CANONICAL_CROPS: dict[str, dict] = {
     "chickpea":    {"suitability": "chickpea",    "production": ["Gram"],
                     "market": ["Bengal Gram (Gram)(Whole)", "Kabuli Chana (Chickpeas-White)"]},
     "pigeonpeas":  {"suitability": "pigeonpeas",  "production": ["Arhar/Tur"],
-                    "market": ["Arhar (Tur/Red Gram)(Whole)", "Arhar", "Red Gram"]},
+                    "market": ["Arhar (Tur/Red Gram)(Whole)", "Red Gram"]},
     "mothbeans":   {"suitability": "mothbeans",   "production": ["Moth"],
                     "market": ["Moath Dal", "Mataki"]},
     "mungbean":    {"suitability": "mungbean",    "production": ["Moong(Green Gram)"],

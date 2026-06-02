@@ -10,7 +10,7 @@ def _fake_commodities(monkeypatch):
         "arharturredgramwhole": "Arhar (Tur/Red Gram)(Whole)",
     })
     monkeypatch.setattr(cc, "_PRICES_MAP", {
-        "maize": "Maize", "onion": "Onion", "arhar": "Arhar",
+        "maize": "Maize", "onion": "Onion", "redgram": "Red Gram",
         "bottlegourd": "Bottle Gourd",   # prices-only, no mandi
     })
 
@@ -23,10 +23,11 @@ def test_resolve_canonical_with_both_vocabularies():
 
 
 def test_resolve_canonical_with_alias_mismatch():
-    # pigeonpeas: mandi uses the verbose Arhar string, prices uses "Arhar"
+    # pigeonpeas: mandi names it "Arhar (Tur/Red Gram)(Whole)" while prices uses
+    # the shorter "Red Gram" — both are real aliases the resolver must bridge.
     ident = cc.resolve_crop("pigeonpeas")
     assert ident.mandi_name == "Arhar (Tur/Red Gram)(Whole)"
-    assert ident.prices_name == "Arhar"
+    assert ident.prices_name == "Red Gram"
     assert ident.has_mandi
 
 
