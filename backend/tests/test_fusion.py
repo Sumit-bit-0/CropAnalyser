@@ -84,6 +84,22 @@ def test_additive_method_reproduces_the_flaw():
     assert geo["recommendations"][0]["breakdown"]["regional"] > 0.0
 
 
+def test_recommend_passes_coords_to_weather(monkeypatch):
+    """When coords are supplied, fusion forwards them to the weather scorer
+    instead of relying on the district centroid."""
+    import analysis.fusion as fusion
+    captured = {}
+
+    def _spy(state, district, season, crops=None, coords=None):
+        captured["coords"] = coords
+        return {}
+
+    monkeypatch.setattr(fusion, "weather_fit_scores", _spy)
+    fusion.recommend(state="Bihar", district="Begusarai", season="Kharif",
+                     coords=(25.42, 86.13), top_k=3)
+    assert captured["coords"] == (25.42, 86.13)
+
+
 def test_weather_module_integrates_and_degrades_per_crop(monkeypatch):
     import analysis.fusion as fz
     stub = {"rice": {"score": 0.9, "fit": "good", "climate": {}},

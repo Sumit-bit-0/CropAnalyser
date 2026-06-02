@@ -13,3 +13,8 @@ frontend/dist/
 htmlcov/
 vite-*.txt
 *.log
+data/*.db
+# Large raw pincode source files (root) — only the generated data/raw/india_pincodes.csv is tracked
+all_india_pincode_directory_2025.csv
+Pincode_Dataset.csv
+pincodes.csv

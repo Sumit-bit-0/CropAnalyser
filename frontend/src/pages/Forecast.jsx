@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { getForecastAvailable, getPriceTrend, getForecast } from '../api/client'
+import { useWorkspace } from '../workspace/WorkspaceContext'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorBanner from '../components/ErrorBanner'
 
 export default function Forecast() {
+  const { state: ctxState } = useWorkspace()
   const [avail, setAvail]         = useState({})   // { state: [commodities] } — only trained models
   const [state, setState]         = useState('')
   const [commodity, setCommodity] = useState('')
@@ -21,7 +23,7 @@ export default function Forecast() {
         setAvail(map)
         const states = Object.keys(map)
         // Open on a known-good pair so the page shows a real forecast immediately.
-        const s0 = map['Punjab'] ? 'Punjab' : states[0] || ''
+        const s0 = map[ctxState] ? ctxState : map['Punjab'] ? 'Punjab' : states[0] || ''
         const c0 = s0 ? (map[s0].includes('Wheat') ? 'Wheat' : map[s0][0]) : ''
         setState(s0)
         setCommodity(c0)

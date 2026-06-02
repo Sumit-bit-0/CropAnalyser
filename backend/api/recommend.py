@@ -35,6 +35,8 @@ class SmartRecommendInput(BaseModel):
     # optional soil/climate block -> Smart Mode (adds the suitability module).
     # Omit it for Simple Mode (location/season/goal only -> regional + market).
     soil: Optional[CropInput] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
 
 
 @router.post("/recommend/smart")
@@ -42,10 +44,11 @@ def recommend_smart(body: SmartRecommendInput):
     """CropAdvisor fusion recommender. With `soil` -> Smart Mode (all modules);
     without it -> Simple Mode (regional + market, graceful degradation)."""
     features = body.soil.model_dump() if body.soil else None
+    coords = (body.lat, body.lon) if body.lat is not None and body.lon is not None else None
     try:
         return fusion_recommend(
             state=body.state, district=body.district, season=body.season,
-            features=features, goal=body.goal, top_k=body.top_k,
+            features=features, goal=body.goal, top_k=body.top_k, coords=coords,
         )
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))

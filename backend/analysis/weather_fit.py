@@ -66,9 +66,10 @@ def _fit(score: float) -> str:
     return "good" if score >= 2 / 3 else "fair" if score >= 1 / 3 else "poor"
 
 
-def weather_fit_scores(state, district, season, crops=None) -> dict:
+def weather_fit_scores(state, district, season, crops=None, coords=None) -> dict:
     crops = list(crops) if crops else WHITELIST
-    coords = get_centroid(state, district)
+    if coords is None:
+        coords = get_centroid(state, district)
     if not coords:
         return {}
     try:

@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { getCropMarkup, getTrendFilters } from '../api/client'
+import { useWorkspace } from '../workspace/WorkspaceContext'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorBanner from '../components/ErrorBanner'
 
 export default function CropAnalyser() {
+  const { crop, setCrop } = useWorkspace()
+  const selected = crop
+  const setSelected = setCrop
   const [crops, setCrops]       = useState([])
-  const [selected, setSelected] = useState('')
   const [data, setData]         = useState([])
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState(null)
@@ -15,7 +18,7 @@ export default function CropAnalyser() {
     getTrendFilters()
       .then(f => {
         setCrops(f.commodities)
-        if (f.commodities.length) setSelected(f.commodities[0])
+        if (!crop && f.commodities.length) setCrop(f.commodities[0])
       })
       .catch(e => setError(e.message))
   }, [])

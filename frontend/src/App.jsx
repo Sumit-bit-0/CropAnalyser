@@ -1,34 +1,28 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import NavBar from './components/NavBar'
-import Home from './pages/Home'
-import StateMap from './pages/StateMap'
-import CropAnalyser from './pages/CropAnalyser'
-import PriceTrend from './pages/PriceTrend'
-import RevenueLoss from './pages/RevenueLoss'
-import Forecast from './pages/Forecast'
-import CropRecommender from './pages/CropRecommender'
-import CropAdvisor from './pages/CropAdvisor'
-import ProfitPlanner from './pages/ProfitPlanner'
-import MandiCompare from './pages/MandiCompare'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { WorkspaceProvider } from './workspace/WorkspaceContext'
+import Workspace from './workspace/Workspace'
+
+// Old routes deep-link into the workspace with the right intent + sub-tab.
+const DEEP_LINKS = {
+  '/advisor': ['grow', 'advisor'], '/recommend': ['grow', 'soil'],
+  '/mandi': ['sell', 'mandi'], '/profit': ['sell', 'profit'],
+  '/map': ['explore', 'map'], '/crops': ['explore', 'crops'],
+  '/revenue': ['explore', 'revenue'], '/trends': ['explore', 'trends'],
+  '/forecast': ['explore', 'forecast'],
+}
 
 export default function App() {
   return (
     <BrowserRouter>
-      <NavBar />
-      <main className="p-6">
+      <WorkspaceProvider>
         <Routes>
-          <Route path="/"         element={<Home />} />
-          <Route path="/map"      element={<StateMap />} />
-          <Route path="/crops"    element={<CropAnalyser />} />
-          <Route path="/trends"   element={<PriceTrend />} />
-          <Route path="/revenue"  element={<RevenueLoss />} />
-          <Route path="/forecast" element={<Forecast />} />
-          <Route path="/advisor"  element={<CropAdvisor />} />
-          <Route path="/recommend" element={<CropRecommender />} />
-          <Route path="/profit"    element={<ProfitPlanner />} />
-          <Route path="/mandi"     element={<MandiCompare />} />
+          <Route path="/" element={<Workspace />} />
+          {Object.entries(DEEP_LINKS).map(([path, [i, t]]) => (
+            <Route key={path} path={path} element={<Workspace initialIntent={i} initialTool={t} />} />
+          ))}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </main>
+      </WorkspaceProvider>
     </BrowserRouter>
   )
 }

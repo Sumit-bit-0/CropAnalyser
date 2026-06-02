@@ -1,19 +1,11 @@
-import { useState, useEffect } from 'react'
-import { getTrendFilters, recommendSmart, locateByGps } from '../api/client'
+import { useState } from 'react'
+import { recommendSmart } from '../api/client'
+import { useWorkspace } from '../workspace/WorkspaceContext'
 import ErrorBanner from '../components/ErrorBanner'
 
-const SEASONS = ['Any', 'Kharif', 'Rabi', 'Summer', 'Winter', 'Autumn', 'Whole Year']
 const GOALS = [
-  ['', 'Balanced'],
-  ['max_profit', 'Max Profit'],
-  ['low_risk', 'Low Risk'],
-  ['sustainable', 'Sustainable'],
-  ['water_efficient', 'Water Efficient'],
-]
-const SOIL_FIELDS = [
-  ['N', 'Nitrogen (N)', 90], ['P', 'Phosphorus (P)', 42], ['K', 'Potassium (K)', 43],
-  ['temperature', 'Temp (°C)', 26], ['humidity', 'Humidity (%)', 80],
-  ['ph', 'Soil pH', 6.5], ['rainfall', 'Rainfall (mm)', 180],
+  ['', 'Balanced'], ['max_profit', 'Max Profit'], ['low_risk', 'Low Risk'],
+  ['sustainable', 'Sustainable'], ['water_efficient', 'Water Efficient'],
 ]
 const MODULES = [
   ['suitability', 'Soil/Climate', 'bg-emerald-500'],
@@ -26,46 +18,22 @@ const TREND = { rising: '↗', flat: '→', falling: '↘' }
 const trendColor = (t) => (t === 'rising' ? 'text-green-600' : t === 'falling' ? 'text-red-500' : 'text-gray-400')
 
 export default function CropAdvisor() {
-  const [states, setStates] = useState([])
-  const [form, setForm] = useState({ state: 'Punjab', district: 'Ludhiana', season: 'Any', goal: '' })
-  const [useSoil, setUseSoil] = useState(false)
-  const [soil, setSoil] = useState(Object.fromEntries(SOIL_FIELDS.map(([k, , v]) => [k, v])))
+  const { state, district, season, lat, lon, mode, soil } = useWorkspace()
+  const [goal, setGoal] = useState('')
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [locating, setLocating] = useState(false)
-
-  useEffect(() => { getTrendFilters().then((d) => setStates(d.states)).catch(() => {}) }, [])
-
-  const useMyLocation = () => {
-    if (!navigator.geolocation) { setError('Geolocation is not supported by this browser.'); return }
-    setLocating(true); setError(null)
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const loc = await locateByGps(pos.coords.latitude, pos.coords.longitude)
-          setForm((f) => ({
-            ...f,
-            state: states.find((s) => s.toLowerCase() === (loc.state || '').toLowerCase()) || f.state,
-            district: loc.district || f.district,
-          }))
-        } catch { setError('Could not resolve your location.') }
-        finally { setLocating(false) }
-      },
-      () => { setError('Location permission denied.'); setLocating(false) },
-      { timeout: 8000 },
-    )
-  }
 
   const submit = async (e) => {
     e.preventDefault()
     setError(null); setLoading(true)
     try {
-      const body = { state: form.state, top_k: 5 }
-      if (form.district.trim()) body.district = form.district.trim()
-      if (form.season !== 'Any') body.season = form.season
-      if (form.goal) body.goal = form.goal
-      if (useSoil) body.soil = Object.fromEntries(Object.entries(soil).map(([k, v]) => [k, Number(v)]))
+      const body = { state, top_k: 5 }
+      if (district?.trim()) body.district = district.trim()
+      if (season && season !== 'Any') body.season = season
+      if (goal) body.goal = goal
+      if (lat != null && lon != null) { body.lat = lat; body.lon = lon }
+      if (mode === 'smart' && soil) body.soil = soil
       setResult(await recommendSmart(body))
     } catch (err) {
       setError(err.response?.data?.detail || 'Recommendation failed'); setResult(null)
@@ -78,70 +46,30 @@ export default function CropAdvisor() {
     <div className="max-w-3xl w-full">
       <h1 className="text-2xl font-bold text-green-800 mb-1">🌱 Crop Advisor</h1>
       <p className="text-gray-600 mb-4">
-        Best crops for your field — combining regional history, market prices, and (optionally)
-        your soil &amp; climate. Add soil details for a sharper agronomic match.
+        Best crops for your field — regional history, market prices, and live seasonal
+        weather. Switch to Smart mode and add soil details for a sharper agronomic match.
       </p>
       {error && <ErrorBanner message={error} />}
 
-      <form onSubmit={submit} className="bg-white border rounded-lg p-4 mb-6 space-y-3 shadow-sm">
-        <div className="flex justify-end">
-          <button type="button" onClick={useMyLocation} disabled={locating}
-            className="text-sm text-green-700 hover:text-green-900 disabled:opacity-50">
-            📍 {locating ? 'Locating…' : 'Use my location'}
-          </button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <label className="text-sm text-gray-700">State
-            <select value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })}
-              className="mt-1 w-full border rounded px-2 py-2">
-              {states.length === 0 && <option>{form.state}</option>}
-              {states.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </label>
-          <label className="text-sm text-gray-700">District
-            <input value={form.district} placeholder="e.g. Ludhiana"
-              onChange={(e) => setForm({ ...form, district: e.target.value })}
-              className="mt-1 w-full border rounded px-2 py-2" />
-          </label>
-          <label className="text-sm text-gray-700">Season
-            <select value={form.season} onChange={(e) => setForm({ ...form, season: e.target.value })}
-              className="mt-1 w-full border rounded px-2 py-2">
-              {SEASONS.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </label>
-          <label className="text-sm text-gray-700">Goal
-            <select value={form.goal} onChange={(e) => setForm({ ...form, goal: e.target.value })}
-              className="mt-1 w-full border rounded px-2 py-2">
-              {GOALS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </select>
-          </label>
-        </div>
-
-        <label className="flex items-center gap-2 text-sm text-gray-700">
-          <input type="checkbox" checked={useSoil} onChange={(e) => setUseSoil(e.target.checked)} />
-          Add soil &amp; climate details <span className="text-gray-400">(Smart Mode)</span>
+      <form onSubmit={submit} className="bg-white border rounded-lg p-4 mb-6 flex flex-wrap items-end gap-3 shadow-sm">
+        <label className="text-sm text-gray-700">Goal
+          <select value={goal} onChange={(e) => setGoal(e.target.value)}
+            className="mt-1 block w-44 border rounded px-2 py-2">
+            {GOALS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
         </label>
-        {useSoil && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1">
-            {SOIL_FIELDS.map(([k, label]) => (
-              <label key={k} className="text-sm text-gray-700">{label}
-                <input type="number" step="any" value={soil[k]}
-                  onChange={(e) => setSoil({ ...soil, [k]: e.target.value })}
-                  className="mt-1 w-full border rounded px-2 py-2" />
-              </label>
-            ))}
-          </div>
-        )}
-
         <button disabled={loading}
-          className="w-full bg-green-700 text-white rounded py-3 font-medium hover:bg-green-800 disabled:opacity-60">
-          {loading ? 'Analyzing your field…' : 'Recommend crops'}
+          className="bg-green-700 text-white rounded px-5 py-3 font-medium hover:bg-green-800 disabled:opacity-60">
+          {loading ? 'Analyzing…' : 'Recommend crops'}
         </button>
+        {mode !== 'smart' && (
+          <span className="text-xs text-gray-400">Simple Mode · turn on Smart for soil suitability</span>
+        )}
       </form>
 
       {!result && !loading && (
         <div className="text-center text-gray-400 border border-dashed rounded-lg py-10">
-          Set your location and goal, then hit <span className="font-medium text-gray-500">Recommend crops</span>.
+          Set your location above, then hit <span className="font-medium text-gray-500">Recommend crops</span>.
         </div>
       )}
 
@@ -207,12 +135,8 @@ export default function CropAdvisor() {
                     </div>
                   ))}
                 </div>
-                {r.why.map((w) => (
-                  <p key={w} className="text-sm text-green-700">✓ {w}</p>
-                ))}
-                {r.cautions.map((c) => (
-                  <p key={c} className="text-sm text-amber-600">⚠ {c}</p>
-                ))}
+                {r.why.map((w) => <p key={w} className="text-sm text-green-700">✓ {w}</p>)}
+                {r.cautions.map((c) => <p key={c} className="text-sm text-amber-600">⚠ {c}</p>)}
               </div>
             ))}
           </div>

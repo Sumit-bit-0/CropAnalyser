@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { planProfit, getPriceReference, getTrendFilters } from '../api/client'
+import { useWorkspace } from '../workspace/WorkspaceContext'
 import ErrorBanner from '../components/ErrorBanner'
 
 const RISK_COLOR = { low: 'bg-green-100 text-green-800', medium: 'bg-yellow-100 text-yellow-800',
@@ -10,9 +11,10 @@ const LABELS = { area_acres: 'Area (acres)', yield_q_per_acre: 'Yield (quintal/a
   market_price: 'Market price (₹/quintal)' }
 
 export default function ProfitPlanner() {
+  const { state, crop, setCrop } = useWorkspace()
   const [filters, setFilters] = useState({ states: [], commodities: [] })
-  const [state, setState] = useState('')
-  const [commodity, setCommodity] = useState('')
+  const commodity = crop
+  const setCommodity = setCrop
   const [ref, setRef] = useState(null)
   const [form, setForm] = useState({ area_acres: 2, yield_q_per_acre: 20, input_cost: 10000,
     labour_cost: 5000, transport_cost: 3000, market_price: 1500 })
@@ -46,10 +48,6 @@ export default function ProfitPlanner() {
       {error && <ErrorBanner message={error} />}
 
       <div className="flex flex-wrap gap-2 items-end mb-4">
-        <label className="text-sm">State
-          <select className="mt-1 block border rounded px-2 py-2" value={state} onChange={(e) => setState(e.target.value)}>
-            <option value="">—</option>{filters.states.map((s) => <option key={s}>{s}</option>)}
-          </select></label>
         <label className="text-sm">Commodity
           <select className="mt-1 block border rounded px-2 py-2" value={commodity} onChange={(e) => setCommodity(e.target.value)}>
             <option value="">—</option>{filters.commodities.map((c) => <option key={c}>{c}</option>)}

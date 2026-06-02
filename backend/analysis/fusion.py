@@ -121,7 +121,7 @@ def _enrich(rec: dict, modules: dict, state, district, season) -> dict:
 def recommend(state: str, district: str | None = None, season: str | None = None,
               features: dict | None = None, goal: str | None = None,
               crops=None, top_k: int = 3, weights: dict | None = None,
-              method: str = "geometric") -> dict:
+              method: str = "geometric", coords: tuple | None = None) -> dict:
     crops = list(crops) if crops else WHITELIST
 
     # 1. run available modules
@@ -132,7 +132,7 @@ def recommend(state: str, district: str | None = None, season: str | None = None
     if features:  # Smart Mode — soil/climate present
         modules["suitability"] = suitability_scores(features, crops)
 
-    wf = weather_fit_scores(state, district, season, crops)
+    wf = weather_fit_scores(state, district, season, crops, coords=coords)
     if wf:  # only include when it actually ran (coords ok + API up)
         modules["weather"] = wf
 

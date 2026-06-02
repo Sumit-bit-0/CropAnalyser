@@ -1,26 +1,18 @@
 import { useState, useEffect } from 'react'
 import { getMandiCommodities, compareMandis } from '../api/client'
+import { useWorkspace } from '../workspace/WorkspaceContext'
 import ErrorBanner from '../components/ErrorBanner'
 
 export default function MandiCompare() {
+  const { lat, lon, area, district } = useWorkspace()
+  const coords = lat != null && lon != null ? { lat, lon } : null
   const [commodities, setCommodities] = useState([])
   const [commodity, setCommodity] = useState('')
-  const [coords, setCoords] = useState(null)
   const [rate, setRate] = useState(2)
   const [rows, setRows] = useState(null)
   const [error, setError] = useState(null)
-  const [locMsg, setLocMsg] = useState('')
 
   useEffect(() => { getMandiCommodities().then(setCommodities).catch(() => {}) }, [])
-
-  const useLocation = () => {
-    if (!navigator.geolocation) { setLocMsg('Geolocation not supported on this device.'); return }
-    setLocMsg('Getting your location…')
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { setCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude }); setLocMsg('') },
-      () => setLocMsg('Location permission denied — showing markets by price instead.'),
-    )
-  }
 
   const compare = async (e) => {
     e?.preventDefault()
@@ -51,13 +43,14 @@ export default function MandiCompare() {
         <label className="text-sm">Transport ₹/km/quintal
           <input type="number" step="any" value={rate} onChange={(e) => setRate(e.target.value)}
             className="mt-1 block w-28 border rounded px-2 py-2" /></label>
-        <button type="button" onClick={useLocation} className="bg-green-700 text-white rounded px-3 py-2 text-sm">📍 Use my location</button>
         <button className="bg-green-800 text-white rounded px-4 py-2 text-sm font-medium">Compare</button>
       </form>
-      {(locMsg || coords) && (
+      {coords ? (
         <p className="text-xs text-gray-500 mb-3">
-          {coords ? `Using your location (${coords.lat.toFixed(3)}, ${coords.lon.toFixed(3)}). Markets ranked by distance.` : locMsg}
+          Using {area || district || 'your location'} ({coords.lat.toFixed(3)}, {coords.lon.toFixed(3)}). Markets ranked by distance.
         </p>
+      ) : (
+        <p className="text-xs text-gray-500 mb-3">Set a pincode or use GPS above to rank markets by distance.</p>
       )}
 
       {best && (
