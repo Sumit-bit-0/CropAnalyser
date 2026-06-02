@@ -10,7 +10,7 @@ import csv
 import json
 import urllib.request
 
-from analysis.geo import get_centroid, haversine
+from analysis.geo import get_centroid, haversine, in_india
 from config import DATA_RAW
 
 PINCODE_CSV = DATA_RAW / "india_pincodes.csv"
@@ -85,6 +85,8 @@ def nearest_pincode(lat: float, lon: float):
     """Reverse GPS -> nearest pincode centroid, or None if the table is empty."""
     best, best_d = None, float("inf")
     for rec in _load_pincodes().values():
+        if not in_india(rec["lat"], rec["lon"]):
+            continue  # defense in depth: never let a corrupt centroid win
         d = haversine(lat, lon, rec["lat"], rec["lon"])
         if d < best_d:
             best_d, best = d, rec

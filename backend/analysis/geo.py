@@ -60,6 +60,18 @@ def get_centroid(state: str, district: str):
     return STATE_CENTROIDS.get(s)
 
 
+# India's mainland+islands bounding box. The latitude span (6-38) and longitude
+# span (67-98) do NOT overlap, so a transposed (lat, lon) pair is unambiguous.
+IN_LAT_RANGE = (6.0, 38.0)
+IN_LON_RANGE = (67.0, 98.0)
+
+
+def in_india(lat: float, lon: float) -> bool:
+    """True if (lat, lon) falls inside India's bounding box."""
+    return (IN_LAT_RANGE[0] <= lat <= IN_LAT_RANGE[1]
+            and IN_LON_RANGE[0] <= lon <= IN_LON_RANGE[1])
+
+
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Great-circle distance in km."""
     lat1, lon1, lat2, lon2 = map(radians, (lat1, lon1, lat2, lon2))

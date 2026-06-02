@@ -32,6 +32,20 @@ def test_nearest_pincode_picks_closest():
     assert r["distance_km"] < 5 and r["source"] == "offline"
 
 
+def test_nearest_pincode_ignores_corrupt_centroids(monkeypatch):
+    # Defense in depth: corrupt centroids (out of India's bbox) must never be
+    # returned. haversine's radians() aliases huge values to arbitrary globe
+    # points, so without a guard a poison row can win "nearest". With only
+    # corrupt rows, the function must degrade to None (caller falls back).
+    monkeypatch.setattr(pc, "_PINCODES", {
+        "000001": {"pincode": "000001", "area": "Poison", "district": "X", "state": "Y",
+                   "lat": 33377611.54, "lon": 469168467.49},
+        "000002": {"pincode": "000002", "area": "Zero", "district": "X", "state": "Y",
+                   "lat": 0.0, "lon": 0.0},
+    })
+    assert pc.nearest_pincode(30.90, 75.86) is None
+
+
 def test_resolve_api_fallback(monkeypatch):
     import io, json
 

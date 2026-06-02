@@ -19,8 +19,25 @@ from collections import defaultdict
 from pathlib import Path
 
 import config
+from analysis.geo import in_india
 
 FIELDNAMES = ["pincode", "area", "district", "state", "lat", "lon"]
+
+
+def _clean_coord(la: str, lo: str):
+    """Parse an India Post office (latitude, longitude) into a sane (lat, lon),
+    or None. Many rows store the pair transposed (lat 6-38 / lon 67-98 don't
+    overlap, so a swap is unambiguous); some are garbage from column
+    misalignment. Recover swaps; drop anything that isn't in India either way."""
+    try:
+        lat, lon = float(la), float(lo)
+    except (TypeError, ValueError):
+        return None
+    if in_india(lat, lon):
+        return (lat, lon)
+    if in_india(lon, lat):          # transposed in the source
+        return (lon, lat)
+    return None                     # genuinely out of range / garbage
 
 
 def aggregate_pincodes(rows):
@@ -40,11 +57,10 @@ def aggregate_pincodes(rows):
             la = (r.get("latitude") or "").strip()
             lo = (r.get("longitude") or "").strip()
             if la and lo and la.upper() != "NA" and lo.upper() != "NA":
-                try:
-                    lats.append(float(la))
-                    lons.append(float(lo))
-                except ValueError:
-                    pass
+                coord = _clean_coord(la, lo)
+                if coord is not None:
+                    lats.append(coord[0])
+                    lons.append(coord[1])
         if not lats:
             continue
         head = next((r for r in recs
