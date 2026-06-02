@@ -99,9 +99,26 @@ Grow `mandi_prices` from 5 → ~27 commodities by ingesting **both** sources.
 - Indexes unchanged. Source CSVs remain untracked/gitignored; only loader code commits.
 - This is a re-ingest: running the loader rebuilds `mandi_prices` from both files.
 
-**Constraint to record in the spec:** agmarknet covers **8 states only** (AP, Gujarat,
-Kerala, MP, Punjab, Rajasthan, UP, West Bengal) across 1,386 markets. Crops/states
-outside that footprint rely on the state-level fallback.
+**Coverage constraint (per-commodity, not per-state):** the 8-state agmarknet footprint
+(AP, Gujarat, Kerala, MP, Punjab, Rajasthan, UP, West Bengal; 1,386 markets) only limits
+the **~22 new commodities** agmarknet adds. The existing 5 commodities already have
+near-all-India mandi coverage and keep it:
+
+| Commodity | States with real mandi data |
+|---|---|
+| Onion | 28 |
+| Potato | 27 |
+| Tomato | 23 |
+| Wheat | 18 |
+| Rice | 14 |
+
+So the practical limit is: **for the new crops (Maize, Arhar, Bajra, Soyabean, Cotton,
+Mustard, Groundnut, banana/mango/apple, etc.), market-level mandi data exists only in the
+8 agmarknet states.** A user outside those states who selects one of the new crops gets
+the state-level fallback — a single state-average price — instead of a distance-ranked
+list of nearby mandis with transport-adjusted "best net price." The original 5 crops are
+unaffected. The `prices` fallback spans 34 states × 384 commodities, so virtually every
+state gets *a* number for *any* crop.
 
 ### 2. Identity layer — `analysis/crop_catalog.py`
 
@@ -131,6 +148,18 @@ One module owns the price fallback chain so the logic lives in exactly one place
 - Mandi uses it now; Profit/Trends may adopt it later (out of scope here).
 - State-level fallback yields a single honest number (no distance ranking — `prices` has
   no market/district), matching the "label fallback" decision.
+
+**State-name normalization (required for the fallback to work).** The fallback joins
+`mandi_prices`/context state → `prices` state **by name**, and the two tables disagree:
+`mandi_prices` has `Chattisgarh`/`Chhattisgarh`, `Tamilnadu`/`Tamil Nadu`, `Orissa`,
+`Gao` (typo), `Jammu & Kashmir`; `prices` has `Odisha`, `Nct Of Delhi`, `Tamil Nadu`,
+`Uttrakhand`/`Uttarakhand`. Without normalization the fallback silently returns nothing
+for those states. Add a small `normalize_state(name) -> canonical` helper (a curated
+alias map → canonical state names) used on **both** sides of the join — and reuse it when
+resolving the context's state for the lookup. Build the alias map from the distinct state
+values actually present in both tables (enumerate at implementation time). Covered by a
+unit test asserting the known mismatches (`Orissa`↔`Odisha`, `Tamilnadu`↔`Tamil Nadu`,
+`Chattisgarh`↔`Chhattisgarh`, `Gao`↔`Goa`, `Nct Of Delhi`↔`Delhi`) collapse to one key.
 
 ### 4. API — `api/mandi.py`
 
@@ -178,7 +207,12 @@ One module owns the price fallback chain so the logic lives in exactly one place
 **Backend (pytest, `-p no:asyncio`, Docker Postgres up):**
 - `resolve_crop`: canonical crop, prices-only commodity, unknown name.
 - `list_all_crops`: union size, dedupe, availability flags correct.
-- `get_market_prices`: all three branches (mandi hit / state fallback / none).
+- `get_market_prices`: all three branches (mandi hit / state fallback / none), including
+  a fallback where the context state name differs from the `prices` spelling (proves
+  normalization is applied on the join).
+- `normalize_state`: known mismatches collapse to one canonical key
+  (`Orissa`↔`Odisha`, `Tamilnadu`↔`Tamil Nadu`, `Chattisgarh`↔`Chhattisgarh`,
+  `Gao`↔`Goa`, `Nct Of Delhi`↔`Delhi`).
 - `load_mandi`: both source schemas normalize to identical columns; dedupe keeps the
   latest `price_date`.
 
