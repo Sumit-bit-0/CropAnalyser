@@ -6,6 +6,7 @@ CSV is bundled at ``data/raw/india_district_centroids.csv`` (columns:
 state/UT centroids so the feature still works offline (coarser ranking).
 """
 import csv
+import re
 from math import radians, sin, cos, asin, sqrt
 from config import DATA_RAW
 
@@ -70,6 +71,26 @@ def in_india(lat: float, lon: float) -> bool:
     """True if (lat, lon) falls inside India's bounding box."""
     return (IN_LAT_RANGE[0] <= lat <= IN_LAT_RANGE[1]
             and IN_LON_RANGE[0] <= lon <= IN_LON_RANGE[1])
+
+
+# Map spelling/alias variants to one canonical token. Keys are normalized
+# (lowercased, non-alphanumerics stripped); values are the canonical token.
+_STATE_ALIASES = {
+    "orissa": "odisha",
+    "chattisgarh": "chhattisgarh",
+    "gao": "goa",
+    "nctofdelhi": "delhi",
+    "uttrakhand": "uttarakhand",
+    "jammukashmir": "jammuandkashmir",
+    "pondicherry": "puducherry",
+}
+
+
+def normalize_state(name: str) -> str:
+    """Collapse a state's spelling/alias variants to one canonical token, so the
+    state-level price fallback can join mandi_prices and prices reliably."""
+    n = re.sub(r"[^a-z0-9]", "", (name or "").lower())
+    return _STATE_ALIASES.get(n, n)
 
 
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
