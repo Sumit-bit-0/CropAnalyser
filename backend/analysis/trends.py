@@ -1,5 +1,6 @@
 from database import query
 from analysis.summaries import table_exists
+from analysis.crop_catalog import resolve_crop
 
 def get_available_filters() -> dict:
     # Read distinct values from the tiny summary tables (instant) instead of
@@ -18,6 +19,10 @@ def get_available_filters() -> dict:
     }
 
 def get_price_trend(state: str, commodity: str) -> list[dict]:
+    # The shared crop picker / advisor may pass a canonical token (e.g.
+    # "pigeonpeas"); resolve it to the prices-table name so multi-alias crops
+    # don't silently blank the chart. Unknown crops fall through unchanged.
+    commodity = resolve_crop(commodity).prices_name or commodity
     df = query("""
         SELECT year, month,
                AVG(farm_gate_price) AS farm_gate_price,

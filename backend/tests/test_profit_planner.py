@@ -1,3 +1,4 @@
+import pandas as pd
 from analysis.profit_planner import plan_profit, get_price_reference
 
 BASE = dict(area_acres=2.0, yield_q_per_acre=20.0, input_cost=10000.0,
@@ -38,3 +39,18 @@ def test_price_reference_keys():
     r = get_price_reference("Maharashtra", "Onion")
     assert {"latest_price", "avg_price", "volatility_cv", "risk_level"} <= set(r.keys())
     assert r["risk_level"] in ("low", "medium", "high", "unknown")
+
+
+def test_price_reference_resolves_shared_crop_token(monkeypatch):
+    # Same contract as the trend tool: a canonical token from the shared crop
+    # picker must resolve to its prices-table name before querying.
+    captured = {}
+
+    def fake_query(sql, params):
+        captured["commodity"] = params[1]
+        return pd.DataFrame({"modal_price": [100.0, 120.0],
+                             "year": [2024, 2024], "month": [1, 2]})
+
+    monkeypatch.setattr("analysis.profit_planner.query", fake_query)
+    get_price_reference("Maharashtra", "pigeonpeas")
+    assert captured["commodity"] == "Arhar (Tur/Red Gram)(Whole)"

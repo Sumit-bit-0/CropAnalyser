@@ -1,4 +1,5 @@
 from database import query
+from analysis.crop_catalog import resolve_crop
 
 
 def plan_profit(area_acres, yield_q_per_acre, input_cost, labour_cost,
@@ -42,6 +43,9 @@ def plan_profit(area_acres, yield_q_per_acre, input_cost, labour_cost,
 
 
 def get_price_reference(state: str, commodity: str) -> dict:
+    # Resolve a shared-crop canonical token to its prices-table name (see
+    # get_price_trend) so multi-alias crops return a price reference.
+    commodity = resolve_crop(commodity).prices_name or commodity
     df = query(
         """
         SELECT modal_price, year, month FROM prices
