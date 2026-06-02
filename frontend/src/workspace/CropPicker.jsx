@@ -25,9 +25,8 @@ export default function CropPicker() {
         className="mt-1 block w-44 border rounded px-2 py-2" />
       <datalist id="crop-options">
         {crops.map((c) => (
-          <option key={c.display_name} value={c.display_name}>
-            {c.has_mandi ? '' : 'est.'}
-          </option>
+          <option key={c.display_name} value={c.display_name}
+            label={c.has_mandi ? c.display_name : `${c.display_name} (est.)`} />
         ))}
       </datalist>
     </label>
