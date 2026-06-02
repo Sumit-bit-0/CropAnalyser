@@ -18,7 +18,7 @@ const TREND = { rising: '↗', flat: '→', falling: '↘' }
 const trendColor = (t) => (t === 'rising' ? 'text-green-600' : t === 'falling' ? 'text-red-500' : 'text-gray-400')
 
 export default function CropAdvisor() {
-  const { state, district, season, lat, lon, mode, soil } = useWorkspace()
+  const { state, district, season, lat, lon, mode, soil, setCrop } = useWorkspace()
   const [goal, setGoal] = useState('')
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
@@ -95,6 +95,10 @@ export default function CropAdvisor() {
                   {i === 0 && <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded-full">Best pick</span>}
                   <span className="ml-auto text-xs text-gray-400">match {r.score}</span>
                 </div>
+                <button type="button" onClick={() => setCrop(r.crop)}
+                  className="text-xs text-green-700 hover:text-green-900 underline mb-2">
+                  See market &amp; prices for {r.crop} →
+                </button>
                 {r.traditional?.years_grown > 0 && (
                   <p className="text-sm text-green-800 font-medium mb-1">
                     ✓ Traditional here — grown {r.traditional.years_grown} yr

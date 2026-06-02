@@ -92,6 +92,7 @@ def test_mandi_compare():
                    params={"commodity": "Wheat", "lat": 19.07, "lon": 72.88, "top": 5})
     assert r.status_code == 200
     data = r.json()
-    assert isinstance(data, list)
-    if data:
-        assert {"market", "modal_price", "net_price"} <= set(data[0].keys())
+    assert isinstance(data, dict)
+    assert "source" in data and "markets" in data
+    if data["markets"]:
+        assert {"market", "modal_price", "net_price"} <= set(data["markets"][0].keys())
