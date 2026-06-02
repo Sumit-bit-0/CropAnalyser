@@ -1,4 +1,7 @@
-"""Ingest mandi-level prices from Agriculture_price_dataset.csv into PostgreSQL.
+"""Ingest mandi-level prices into PostgreSQL, merging two sources: the current
+Agriculture_price_dataset.csv and the agmarknet historical-prices CSV. Together
+they cover ~27 commodities (the current source's Onion/Potato/Rice/Tomato plus
+agmarknet's Maize/pulses/oilseeds/vegetables, deduped on the Wheat overlap).
 
 Run from backend/ as a module:
     venv\\Scripts\\python.exe -m data.load_mandi [current_csv [agmarknet_csv]]
@@ -38,7 +41,7 @@ def clean_mandi(df: pd.DataFrame, colmap: dict = COLMAP) -> pd.DataFrame:
     return df[OUT_COLS]
 
 
-def merge_dedupe(frames: list) -> pd.DataFrame:
+def merge_dedupe(frames: list[pd.DataFrame]) -> pd.DataFrame:
     combined = pd.concat(frames, ignore_index=True)
     combined = combined.sort_values("price_date").drop_duplicates(
         subset=["state", "district", "market", "commodity", "variety"], keep="last"
