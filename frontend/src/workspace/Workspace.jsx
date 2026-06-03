@@ -49,9 +49,9 @@ export default function Workspace({ initialIntent = 'grow', initialTool = null }
   const Tool = tool.C
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-green-800 text-white px-4 md:px-6 py-3 flex items-center justify-between">
-        <span className="font-bold text-green-200">🌾 Agri Market Analyser</span>
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <header className="bg-primary text-primary-foreground px-4 md:px-6 py-3 flex items-center justify-between">
+        <span className="font-bold">🌾 Agri Market Analyser</span>
         <ModeToggle />
       </header>
 
@@ -60,15 +60,15 @@ export default function Workspace({ initialIntent = 'grow', initialTool = null }
       <nav className="flex gap-2 px-4 md:px-6 pt-3 flex-wrap">
         {INTENTS.map((i) => (
           <button key={i.id} onClick={() => pickIntent(i.id)}
-            className={`px-3 py-2 rounded-t-lg text-sm font-medium ${i.id === intentId ? 'bg-white border border-b-0 text-green-800' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}>
+            className={`px-3 py-2 rounded-t-lg text-sm font-medium transition-colors ${i.id === intentId ? 'bg-card border border-b-0 border-border text-primary' : 'bg-secondary text-secondary-foreground hover:bg-muted'}`}>
             {i.label}
           </button>
         ))}
       </nav>
-      <div className="flex gap-3 px-4 md:px-6 border-b text-sm">
+      <div className="flex gap-3 px-4 md:px-6 border-b border-border text-sm">
         {intent.tools.map((t) => (
           <button key={t.id} onClick={() => setToolId(t.id)}
-            className={`py-2 ${t.id === toolId ? 'text-green-800 font-semibold border-b-2 border-green-700' : 'text-gray-500 hover:text-green-700'}`}>
+            className={`py-2 transition-colors ${t.id === toolId ? 'text-primary font-semibold border-b-2 border-primary' : 'text-muted-foreground hover:text-primary'}`}>
             {t.label}
           </button>
         ))}
