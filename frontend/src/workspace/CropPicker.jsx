@@ -17,12 +17,12 @@ export default function CropPicker() {
   }
 
   return (
-    <label className="text-sm text-gray-700">Crop
+    <label className="text-sm text-foreground">Crop
       <input list="crop-options" value={text}
         onChange={(e) => setText(e.target.value)}
         onBlur={(e) => commit(e.target.value)}
         placeholder="e.g. Maize"
-        className="mt-1 block w-44 border rounded px-2 py-2" />
+        className="mt-1 block w-44 border border-border rounded px-2 py-2" />
       <datalist id="crop-options">
         {crops.map((c) => (
           <option key={c.display_name} value={c.display_name}

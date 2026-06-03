@@ -14,10 +14,10 @@ export default function SoilPanel() {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
       {SOIL_FIELDS.map(([k, label]) => (
-        <label key={k} className="text-sm text-gray-700">{label}
+        <label key={k} className="text-sm text-foreground">{label}
           <input type="number" step="any" value={s[k]}
             onChange={(e) => setSoil({ ...s, [k]: Number(e.target.value) })}
-            className="mt-1 w-full border rounded px-2 py-2" />
+            className="mt-1 w-full border border-border rounded px-2 py-2" />
         </label>
       ))}
     </div>

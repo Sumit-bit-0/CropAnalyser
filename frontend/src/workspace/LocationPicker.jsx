@@ -51,7 +51,7 @@ export default function LocationPicker({ states }) {
         <div className="flex gap-1 text-xs">
           {['pincode', 'manual'].map((t) => (
             <button key={t} type="button" onClick={() => setTab(t)}
-              className={`px-2 py-1 rounded ${tab === t ? 'bg-green-700 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              className={`px-2 py-1 rounded ${tab === t ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
               {t === 'pincode' ? 'Pincode' : 'State / District'}
             </button>
           ))}
@@ -59,44 +59,44 @@ export default function LocationPicker({ states }) {
 
         {tab === 'pincode' ? (
           <>
-            <label className="text-sm text-gray-700">Pincode
+            <label className="text-sm text-foreground">Pincode
               <input value={pin} inputMode="numeric" maxLength={6} placeholder="e.g. 851101"
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                className="mt-1 block w-32 border rounded px-2 py-2" />
+                className="mt-1 block w-32 border border-border rounded px-2 py-2" />
             </label>
             <button type="button" onClick={lookupPin} disabled={busy}
-              className="bg-green-700 text-white rounded px-3 py-2 text-sm disabled:opacity-50">
+              className="bg-primary text-primary-foreground rounded px-3 py-2 text-sm disabled:opacity-50">
               {busy ? '…' : 'Find'}
             </button>
           </>
         ) : (
           <>
-            <label className="text-sm text-gray-700">State
+            <label className="text-sm text-foreground">State
               <select value={state} onChange={(e) => setLocation({ state: e.target.value })}
-                className="mt-1 block border rounded px-2 py-2">
+                className="mt-1 block border border-border rounded px-2 py-2">
                 {states.length === 0 && <option>{state}</option>}
                 {states.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </label>
-            <label className="text-sm text-gray-700">District
+            <label className="text-sm text-foreground">District
               <input value={district} placeholder="e.g. Ludhiana"
                 onChange={(e) => setLocation({ district: e.target.value })}
-                className="mt-1 block border rounded px-2 py-2" />
+                className="mt-1 block border border-border rounded px-2 py-2" />
             </label>
           </>
         )}
 
         <button type="button" onClick={useGps} disabled={busy}
-          className="text-sm text-green-700 hover:text-green-900 disabled:opacity-50 pb-2">
+          className="text-sm text-primary hover:text-primary/80 disabled:opacity-50 pb-2">
           📍 Use my location
         </button>
       </div>
 
       <p className="text-xs">
         {status?.err && <span className="text-amber-600">{status.err}</span>}
-        {status?.ok && <span className="text-gray-500">📍 {status.ok}</span>}
+        {status?.ok && <span className="text-muted-foreground">📍 {status.ok}</span>}
         {!status && (area || district) &&
-          <span className="text-gray-500">📍 {area || district}, {state}
+          <span className="text-muted-foreground">📍 {area || district}, {state}
             {pincode ? ` · ${pincode}` : ''}</span>}
       </p>
     </div>
