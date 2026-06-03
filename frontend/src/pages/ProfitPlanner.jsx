@@ -2,9 +2,14 @@ import { useState, useEffect } from 'react'
 import { planProfit, getPriceReference, getTrendFilters } from '../api/client'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import ErrorBanner from '../components/ErrorBanner'
+import PageHeader from '@/components/PageHeader'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-const RISK_COLOR = { low: 'bg-green-100 text-green-800', medium: 'bg-yellow-100 text-yellow-800',
-                     high: 'bg-red-100 text-red-800', unknown: 'bg-gray-100 text-gray-600' }
+const RISK_COLOR = { low: 'bg-primary/15 text-primary', medium: 'bg-accent/15 text-accent',
+                     high: 'bg-destructive/15 text-destructive', unknown: 'bg-muted text-muted-foreground' }
 const NUM = ['area_acres', 'yield_q_per_acre', 'input_cost', 'labour_cost', 'transport_cost', 'market_price']
 const LABELS = { area_acres: 'Area (acres)', yield_q_per_acre: 'Yield (quintal/acre)',
   input_cost: 'Input cost (₹)', labour_cost: 'Labour cost (₹)', transport_cost: 'Transport cost (₹)',
@@ -43,16 +48,17 @@ export default function ProfitPlanner() {
 
   return (
     <div className="max-w-3xl w-full">
-      <h1 className="text-2xl font-bold text-green-800 mb-1">Profit Planner</h1>
-      <p className="text-gray-600 mb-4">Estimate profit, break-even price, and selling risk for your crop.</p>
+      <PageHeader title="Profit Planner" subtitle="Estimate profit, break-even price, and selling risk for your crop." />
       {error && <ErrorBanner message={error} />}
 
       <div className="flex flex-wrap gap-2 items-end mb-4">
-        <label className="text-sm">Commodity
-          <select className="mt-1 block border rounded px-2 py-2" value={commodity} onChange={(e) => setCommodity(e.target.value)}>
-            <option value="">—</option>{filters.commodities.map((c) => <option key={c}>{c}</option>)}
-          </select></label>
-        <button type="button" onClick={loadPrice} className="bg-green-700 text-white rounded px-3 py-2 text-sm">Use market price</button>
+        <label className="text-sm text-foreground">Commodity
+          <Select value={commodity || ''} onValueChange={setCommodity}>
+            <SelectTrigger className="mt-1 w-48"><SelectValue placeholder="—" /></SelectTrigger>
+            <SelectContent>{filters.commodities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+          </Select>
+        </label>
+        <Button type="button" variant="outline" size="sm" onClick={loadPrice}>Use market price</Button>
         {ref && (
           <span className={`text-xs px-2 py-1 rounded ${RISK_COLOR[ref.risk_level]}`}>
             Price risk: {ref.risk_level}{ref.latest_price ? ` (latest ₹${ref.latest_price}/q)` : ''}
@@ -62,27 +68,28 @@ export default function ProfitPlanner() {
 
       <form onSubmit={submit} className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
         {NUM.map((k) => (
-          <label key={k} className="text-sm text-gray-700">{LABELS[k]}
-            <input type="number" step="any" value={form[k]}
-              onChange={(e) => setForm({ ...form, [k]: e.target.value })}
-              className="mt-1 w-full border rounded px-2 py-2" /></label>
+          <label key={k} className="text-sm text-foreground">{LABELS[k]}
+            <Input type="number" step="any" value={form[k]}
+              onChange={(e) => setForm({ ...form, [k]: e.target.value })} className="mt-1 w-full" /></label>
         ))}
-        <button className="col-span-2 md:col-span-3 bg-green-700 text-white rounded py-3 font-medium hover:bg-green-800">Calculate</button>
+        <Button className="col-span-2 md:col-span-3" size="lg">Calculate</Button>
       </form>
 
       {result && (
-        <div className="border rounded p-4 space-y-2">
-          <p className={`text-2xl font-bold ${result.profit >= 0 ? 'text-green-700' : 'text-red-600'}`}>
-            {result.profit >= 0 ? 'Profit' : 'Loss'}: ₹{Math.abs(result.profit).toLocaleString('en-IN')}
-          </p>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <span>Revenue: ₹{result.total_revenue.toLocaleString('en-IN')}</span>
-            <span>Total cost: ₹{result.total_cost.toLocaleString('en-IN')}</span>
-            <span>Break-even price: {result.break_even_price ? `₹${result.break_even_price}/q` : '—'}</span>
-            <span>Target sale price: {result.target_sale_price ? `₹${result.target_sale_price}/q` : '—'}</span>
-          </div>
-          <p className="text-gray-800 bg-gray-50 rounded p-2">{result.recommendation}</p>
-        </div>
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <p className={`text-2xl font-bold ${result.profit >= 0 ? 'text-primary' : 'text-destructive'}`}>
+              {result.profit >= 0 ? 'Profit' : 'Loss'}: ₹{Math.abs(result.profit).toLocaleString('en-IN')}
+            </p>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <span>Revenue: ₹{result.total_revenue.toLocaleString('en-IN')}</span>
+              <span>Total cost: ₹{result.total_cost.toLocaleString('en-IN')}</span>
+              <span>Break-even price: {result.break_even_price ? `₹${result.break_even_price}/q` : '—'}</span>
+              <span>Target sale price: {result.target_sale_price ? `₹${result.target_sale_price}/q` : '—'}</span>
+            </div>
+            <p className="text-foreground bg-muted rounded p-2">{result.recommendation}</p>
+          </CardContent>
+        </Card>
       )}
     </div>
   )
