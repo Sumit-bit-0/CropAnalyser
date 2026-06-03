@@ -16,5 +16,6 @@ export const getPriceReference = (state, commodity) =>
   api.get('/profit/price-reference', { params: { state, commodity } }).then(r => r.data)
 export const getMandiCommodities = () => api.get('/mandi/commodities').then(r => r.data)
 export const compareMandis    = (params) => api.get('/mandi/compare', { params }).then(r => r.data)
+export const fpoBulkPlan       = (body) => api.post('/fpo/bulk-plan', body).then(r => r.data)
 export const locateByGps      = (lat, lon) => api.get('/geo/locate', { params: { lat, lon } }).then(r => r.data)
 export const resolvePincode   = (pin) => api.get(`/geo/pincode/${pin}`).then(r => r.data)

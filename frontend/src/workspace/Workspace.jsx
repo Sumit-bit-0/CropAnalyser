@@ -7,6 +7,7 @@ import CropAdvisor from '../pages/CropAdvisor'
 import CropRecommender from '../pages/CropRecommender'
 import MandiCompare from '../pages/MandiCompare'
 import ProfitPlanner from '../pages/ProfitPlanner'
+import FpoBulkDashboard from '../pages/FpoBulkDashboard'
 import StateMap from '../pages/StateMap'
 import CropAnalyser from '../pages/CropAnalyser'
 import RevenueLoss from '../pages/RevenueLoss'
@@ -21,6 +22,7 @@ const INTENTS = [
   { id: 'sell', label: '💰 Where & when to sell', tools: [
     { id: 'mandi', label: 'Mandi Compare', C: MandiCompare },
     { id: 'profit', label: 'Profit Planner', C: ProfitPlanner },
+    { id: 'fpo', label: 'FPO Bulk Selling', C: FpoBulkDashboard },
   ] },
   { id: 'explore', label: '📊 Explore', tools: [
     { id: 'map', label: 'State Map', C: StateMap },
