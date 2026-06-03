@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react'
 import { fpoBulkPlan } from '../api/client'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import ErrorBanner from '../components/ErrorBanner'
+import PageHeader from '@/components/PageHeader'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 const DEFAULT_TRANSPORT = {
   truck_capacity_q: 100, fixed_hire_per_truck: 2000,
@@ -10,9 +15,7 @@ const DEFAULT_TRANSPORT = {
 
 export default function FpoBulkDashboard() {
   const { crop, state, lat, lon } = useWorkspace()
-  const firstRow = {
-    lat: lat ?? '', lon: lon ?? '', state: state || '', quantity_q: '',
-  }
+  const firstRow = { lat: lat ?? '', lon: lon ?? '', state: state || '', quantity_q: '' }
   const [rows, setRows] = useState([firstRow])
   const [transport, setTransport] = useState(DEFAULT_TRANSPORT)
   const [result, setResult] = useState(null)
@@ -48,8 +51,7 @@ export default function FpoBulkDashboard() {
         state: r.state || null, quantity_q: Number(r.quantity_q),
       }))
       const body = {
-        crop,
-        farmers,
+        crop, farmers,
         transport: Object.fromEntries(
           Object.entries(transport).map(([k, v]) => [k, Number(v)])),
       }
@@ -64,100 +66,93 @@ export default function FpoBulkDashboard() {
 
   return (
     <div className="max-w-4xl w-full">
-      <h1 className="text-2xl font-bold text-green-800 mb-1">FPO Bulk Selling</h1>
-      <p className="text-gray-600 mb-4">
-        Pool members' harvest and see if trucking it together beats selling alone.
-      </p>
+      <PageHeader title="FPO Bulk Selling"
+        subtitle="Pool members' harvest and see if trucking it together beats selling alone." />
       {error && <ErrorBanner message={error} />}
-      {!crop && <p className="text-gray-500 mb-3">Pick a crop above first.</p>}
+      {!crop && <p className="text-muted-foreground mb-3">Pick a crop above first.</p>}
 
       <div className="overflow-x-auto">
-      <table className="min-w-full text-sm border mb-3">
-        <thead className="bg-green-50 text-left">
-          <tr>
-            <th className="px-2 py-2">Lat</th><th className="px-2 py-2">Lon</th>
-            <th className="px-2 py-2">State</th><th className="px-2 py-2">Quantity (q)</th>
-            <th className="px-2 py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {/* key by index: rows are append/remove-by-position, no reordering */}
-          {rows.map((r, i) => (
-            <tr key={i} className="border-t">
-              <td className="px-2 py-1"><input className="w-24 border rounded px-1 py-1" value={r.lat} onChange={(e) => setRow(i, 'lat', e.target.value)} /></td>
-              <td className="px-2 py-1"><input className="w-24 border rounded px-1 py-1" value={r.lon} onChange={(e) => setRow(i, 'lon', e.target.value)} /></td>
-              <td className="px-2 py-1"><input className="w-28 border rounded px-1 py-1" value={r.state} onChange={(e) => setRow(i, 'state', e.target.value)} /></td>
-              <td className="px-2 py-1"><input className="w-24 border rounded px-1 py-1" value={r.quantity_q} onChange={(e) => setRow(i, 'quantity_q', e.target.value)} /></td>
-              <td className="px-2 py-1">{rows.length > 1 && <button onClick={() => removeRow(i)} className="text-red-600">✕</button>}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <Table className="mb-3">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Lat</TableHead><TableHead>Lon</TableHead>
+              <TableHead>State</TableHead><TableHead>Quantity (q)</TableHead><TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {/* key by index: rows are append/remove-by-position, no reordering */}
+            {rows.map((r, i) => (
+              <TableRow key={i}>
+                <TableCell><Input className="w-24" value={r.lat} onChange={(e) => setRow(i, 'lat', e.target.value)} /></TableCell>
+                <TableCell><Input className="w-24" value={r.lon} onChange={(e) => setRow(i, 'lon', e.target.value)} /></TableCell>
+                <TableCell><Input className="w-28" value={r.state} onChange={(e) => setRow(i, 'state', e.target.value)} /></TableCell>
+                <TableCell><Input className="w-24" value={r.quantity_q} onChange={(e) => setRow(i, 'quantity_q', e.target.value)} /></TableCell>
+                <TableCell>{rows.length > 1 && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => removeRow(i)}>✕</Button>}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
-      <button onClick={addRow} className="text-green-700 text-sm mb-4">+ Add farmer</button>
+      <Button variant="link" size="sm" className="px-0 mb-4" onClick={addRow}>+ Add farmer</Button>
 
       <div className="flex gap-3 flex-wrap mb-4 text-sm">
         {Object.keys(DEFAULT_TRANSPORT).map((k) => (
-          <label key={k} className="capitalize">{k.replace(/_/g, ' ')}
-            <input type="number" step="any" min="0" value={transport[k]} onChange={(e) => setT(k, e.target.value)}
-              className="mt-1 block w-32 border rounded px-2 py-1" />
+          <label key={k} className="capitalize text-foreground">{k.replace(/_/g, ' ')}
+            <Input type="number" step="any" min="0" value={transport[k]} onChange={(e) => setT(k, e.target.value)} className="mt-1 w-32" />
           </label>
         ))}
       </div>
 
-      <button onClick={submit} disabled={!crop}
-        className="bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50">
-        Compute plan
-      </button>
+      <Button onClick={submit} disabled={!crop}>Compute plan</Button>
 
       {result && (
         <div className="mt-5">
           {result.price_basis !== 'mandi' ? (
-            <div className="border border-amber-300 bg-amber-50 rounded-lg p-4">
-              <p>{result.message}</p>
-            </div>
+            <Card className="border-accent/40 bg-accent/10">
+              <CardContent className="p-4"><p>{result.message}</p></CardContent>
+            </Card>
           ) : (
-            <div className="border rounded-lg p-4">
-              {result.spread_warning && (
-                <p className="text-amber-700 text-sm mb-2">⚠ {result.spread_warning}</p>
-              )}
-              <p className="text-lg mb-1">{result.message}</p>
-              <ul className="text-sm text-gray-700 space-y-1 mt-2">
-                <li>Selling individually: <b>₹{result.baseline}</b></li>
-                <li>Pooled &amp; trucked{result.chosen_mandi ? ` to ${result.chosen_mandi.market}` : ''}: <b>₹{result.aggregated_rev}</b>
-                  {result.chosen_mandi ? ` (${result.chosen_mandi.trucks} truck(s), ₹${result.chosen_mandi.transport_cost} transport)` : ''}</li>
-                <li className={result.extra_income > 0 ? 'text-green-700 font-semibold' : 'text-gray-600'}>
-                  Extra income from pooling: ₹{result.extra_income}</li>
-              </ul>
-              <p className="text-xs text-gray-500 mt-3">
-                Assumes the harvest is aggregated at a central collection point (the members' geographic centre); v1 does not plan multi-stop pickup routes.
-              </p>
-              {result.per_farmer?.length > 0 && (
-                <div className="overflow-x-auto mt-4">
-                  <p className="text-sm font-medium text-gray-700 mb-1">If each member sold on their own:</p>
-                  <table className="min-w-full text-sm border">
-                    <thead className="bg-green-50 text-left">
-                      <tr>
-                        <th className="px-2 py-1">Member (lat, lon)</th>
-                        <th className="px-2 py-1">Qty (q)</th>
-                        <th className="px-2 py-1">Best market</th>
-                        <th className="px-2 py-1">Revenue ₹</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.per_farmer.map((f, i) => (
-                        <tr key={i} className="border-t">
-                          <td className="px-2 py-1">{f.lat}, {f.lon}</td>
-                          <td className="px-2 py-1">{f.quantity_q}</td>
-                          <td className="px-2 py-1">{f.best_market ?? '—'}</td>
-                          <td className="px-2 py-1">₹{f.revenue}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+            <Card>
+              <CardContent className="p-4">
+                {result.spread_warning && (
+                  <p className="text-accent text-sm mb-2">⚠ {result.spread_warning}</p>
+                )}
+                <p className="text-lg mb-1">{result.message}</p>
+                <ul className="text-sm text-foreground space-y-1 mt-2">
+                  <li>Selling individually: <b>₹{result.baseline}</b></li>
+                  <li>Pooled &amp; trucked{result.chosen_mandi ? ` to ${result.chosen_mandi.market}` : ''}: <b>₹{result.aggregated_rev}</b>
+                    {result.chosen_mandi ? ` (${result.chosen_mandi.trucks} truck(s), ₹${result.chosen_mandi.transport_cost} transport)` : ''}</li>
+                  <li className={result.extra_income > 0 ? 'text-primary font-semibold' : 'text-muted-foreground'}>
+                    Extra income from pooling: ₹{result.extra_income}</li>
+                </ul>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Assumes the harvest is aggregated at a central collection point (the members' geographic centre); v1 does not plan multi-stop pickup routes.
+                </p>
+                {result.per_farmer?.length > 0 && (
+                  <div className="overflow-x-auto mt-4">
+                    <p className="text-sm font-medium text-foreground mb-1">If each member sold on their own:</p>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Member (lat, lon)</TableHead><TableHead>Qty (q)</TableHead>
+                          <TableHead>Best market</TableHead><TableHead>Revenue ₹</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {result.per_farmer.map((f, i) => (
+                          <TableRow key={i}>
+                            <TableCell>{f.lat}, {f.lon}</TableCell>
+                            <TableCell>{f.quantity_q}</TableCell>
+                            <TableCell>{f.best_market ?? '—'}</TableCell>
+                            <TableCell>₹{f.revenue}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
         </div>
       )}
