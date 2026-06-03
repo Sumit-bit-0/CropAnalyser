@@ -3,6 +3,9 @@ import { useWorkspace } from './WorkspaceContext'
 import LocationPicker from './LocationPicker'
 import SoilPanel from './SoilPanel'
 import CropPicker from './CropPicker'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
 
 const SEASONS = ['Any', 'Kharif', 'Rabi', 'Summer', 'Winter', 'Autumn', 'Whole Year']
 
@@ -10,19 +13,23 @@ export default function ContextBar({ states }) {
   const { season, setSeason, mode } = useWorkspace()
   const [showSoil, setShowSoil] = useState(false)
   return (
-    <div className="bg-white border-b px-4 md:px-6 py-3">
+    <div className="bg-card border-b border-border px-4 md:px-6 py-3">
       <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
         <LocationPicker states={states} />
         <CropPicker />
-        <label className="text-sm text-gray-700">Season
-          <select value={season} onChange={(e) => setSeason(e.target.value)}
-            className="mt-1 block border rounded px-2 py-2">
-            {SEASONS.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+        <label className="text-sm text-foreground">Season
+          <Select value={season} onValueChange={setSeason}>
+            <SelectTrigger className="mt-1 w-40">
+              <SelectValue placeholder="Season" />
+            </SelectTrigger>
+            <SelectContent>
+              {SEASONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </label>
         {mode === 'smart' && (
           <button type="button" onClick={() => setShowSoil((v) => !v)}
-            className="text-sm text-green-700 hover:text-green-900 pb-2">
+            className="text-sm text-primary hover:text-primary/80 pb-2">
             {showSoil ? '▾' : '▸'} Soil details
           </button>
         )}
