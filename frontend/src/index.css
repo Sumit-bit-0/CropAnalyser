@@ -1,3 +1,37 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 33% 97%;       /* warm stone-50 */
+    --foreground: 30 12% 16%;       /* stone-800 text */
+    --card: 0 0% 100%;
+    --card-foreground: 30 12% 16%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 12% 16%;
+    --primary: 142 40% 30%;         /* green-700 */
+    --primary-foreground: 40 33% 97%;
+    --secondary: 36 40% 92%;        /* amber-tinted surface */
+    --secondary-foreground: 30 12% 16%;
+    --muted: 36 20% 90%;
+    --muted-foreground: 30 8% 42%;
+    --accent: 32 80% 50%;           /* amber/clay accent */
+    --accent-foreground: 30 12% 16%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 40 33% 97%;
+    --border: 30 14% 86%;
+    --input: 30 14% 86%;
+    --ring: 142 40% 30%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
