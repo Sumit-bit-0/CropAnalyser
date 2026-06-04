@@ -1,0 +1,23 @@
+{
+  "nav.features": "Features",
+  "nav.about": "About",
+  "hero.title": "Know what to grow. Know where to sell.",
+  "hero.subtitle": "A decision tool for Indian farmers. Compare crops by expected yield and price, find the best mandi for your harvest, and make choices grounded in real data.",
+  "hero.cta": "Open the analyser",
+  "features.heading": "Three ways to use the analyser",
+  "grow.title": "Grow",
+  "grow.body": "Discover which crops suit your region this season. See expected yields, price forecasts, and whether a crop has traditional roots in your area.",
+  "sell.title": "Sell",
+  "sell.body": "Compare mandis by distance and net price after transport. Find where your harvest fetches the best return, or confirm that local is the smart choice.",
+  "explore.title": "Explore",
+  "explore.body": "Dive into historical price trends, seasonal patterns, and regional data. Build your own understanding of the agricultural landscape.",
+  "about.heading": "Built for honest decisions",
+  "about.p1": "Crop Analyser brings government mandi prices, weather records, and decades of agricultural data into one place, so the choice in front of you is backed by evidence rather than a sales pitch. It gives you a clear picture, not a rosy one. When the model is uncertain, it says so. When the data is thin, it shows you. Your farm deserves straight talk.",
+  "about.p2": "It starts from what already works on your land. A crop your district has grown for years is treated as the strong default, and the data is there to confirm or challenge it, not to push the latest trend. The same goes for selling: when pooling a harvest and trucking it to a distant market does not actually pay, the tool tells you to sell locally instead of inventing a premium that is not real.",
+  "about.draws.title": "What it draws on",
+  "about.draws.body": "Agmarknet and eNAM mandi prices, district crop-production history, seasonal weather from global climate records, and India Post location data. All public sources, with each number traceable to where it came from.",
+  "about.decides.title": "How it decides",
+  "about.decides.body": "A tradition-first engine weighs regional history, soil and climate fit, seasonal weather, and market prices together. Expected yield and price come from models trained on the real record (a yield model plus nearly 2,000 price forecasts across 15 states), never a guess dressed up as certainty.",
+  "footer.tagline": "Data for the Indian farmer",
+  "lang.label": "Language"
+}
