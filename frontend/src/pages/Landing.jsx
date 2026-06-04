@@ -56,44 +56,32 @@ export default function Landing() {
               Three ways to use the analyser
             </h2>
             <div className="mt-12 grid gap-8 md:grid-cols-3">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                    <Sprout className="h-5 w-5" />
+              {[
+                {
+                  to: '/advisor', icon: Sprout, iconBg: 'bg-primary text-primary-foreground', title: 'Grow',
+                  body: 'Discover which crops suit your region this season. See expected yields, price forecasts, and whether a crop has traditional roots in your area.',
+                },
+                {
+                  to: '/mandi', icon: Store, iconBg: 'bg-accent text-accent-foreground', title: 'Sell',
+                  body: 'Compare mandis by distance and net price after transport. Find where your harvest fetches the best return, or confirm that local is the smart choice.',
+                },
+                {
+                  to: '/map', icon: BarChart3, iconBg: 'bg-muted text-foreground', title: 'Explore',
+                  body: 'Dive into historical price trends, seasonal patterns, and regional data. Build your own understanding of the agricultural landscape.',
+                },
+              ].map(({ to, icon: Icon, iconBg, title, body }) => (
+                <Link key={to} to={to}
+                  className="group flex flex-col rounded-lg -m-3 p-3 transition-colors hover:bg-card hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${iconBg}`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="font-display text-xl font-semibold text-foreground transition-colors group-hover:text-primary">{title}</h3>
+                    <ArrowRight className="h-4 w-4 text-primary ml-auto opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
                   </div>
-                  <h3 className="font-display text-xl font-semibold text-foreground">Grow</h3>
-                </div>
-                <p className="text-muted-foreground leading-relaxed">
-                  Discover which crops suit your region this season. See expected yields,
-                  price forecasts, and whether a crop has traditional roots in your area.
-                </p>
-              </div>
-
-              <div className="flex flex-col">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-                    <Store className="h-5 w-5" />
-                  </div>
-                  <h3 className="font-display text-xl font-semibold text-foreground">Sell</h3>
-                </div>
-                <p className="text-muted-foreground leading-relaxed">
-                  Compare mandis by distance and net price after transport. Find where your
-                  harvest fetches the best return, or confirm that local is the smart choice.
-                </p>
-              </div>
-
-              <div className="flex flex-col">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-foreground">
-                    <BarChart3 className="h-5 w-5" />
-                  </div>
-                  <h3 className="font-display text-xl font-semibold text-foreground">Explore</h3>
-                </div>
-                <p className="text-muted-foreground leading-relaxed">
-                  Dive into historical price trends, seasonal patterns, and regional data.
-                  Build your own understanding of the agricultural landscape.
-                </p>
-              </div>
+                  <p className="text-muted-foreground leading-relaxed">{body}</p>
+                </Link>
+              ))}
             </div>
           </div>
         </section>
