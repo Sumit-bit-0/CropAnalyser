@@ -49,3 +49,19 @@ def test_state_fallback_when_district_unknown():
 def test_crops_subset_filter():
     scores = regional_fit_scores("Punjab", "Ludhiana", crops=["rice", "maize"])
     assert set(scores) == {"rice", "maize"}
+
+
+def test_default_window_caps_years_grown():
+    # Default recency window is the last 10 years, so years_grown can't exceed it.
+    scores = regional_fit_scores("Punjab", "Ludhiana")
+    assert 0 < scores["wheat"]["years_grown"] <= 10
+
+
+def test_smaller_window_reduces_years_grown():
+    # A 3-year window counts no more years than the (effectively unbounded) full history.
+    full = regional_fit_scores("Punjab", "Ludhiana", recent_years=100)
+    recent = regional_fit_scores("Punjab", "Ludhiana", recent_years=3)
+    assert recent["wheat"]["years_grown"] <= 3
+    assert recent["wheat"]["years_grown"] <= full["wheat"]["years_grown"]
+    # wheat is still the proven top crop in the belt within the recent window
+    assert recent["wheat"]["score"] == 1.0

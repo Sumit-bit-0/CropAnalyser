@@ -27,7 +27,7 @@ plain-language `why` / `cautions` for the explanation layer.
 import math
 
 from analysis.crop_catalog import WHITELIST
-from analysis.regional_fit import regional_fit_scores
+from analysis.regional_fit import regional_fit_scores, RECENT_YEARS
 from analysis.suitability import suitability_scores
 from analysis.market_profitability import market_profitability_scores
 from analysis.yield_predict import predict_yield
@@ -79,7 +79,7 @@ def _why(crop, modules) -> list[str]:
     if "regional" in modules:
         r = modules["regional"][crop]
         if r["score"] >= 0.5 and r["level"] != "none":
-            why.append(f"proven in your {r['level']}: grown {r['years_grown']} years on record")
+            why.append(f"proven in your {r['level']}: grown {r['years_grown']} of the last {RECENT_YEARS} years")
     if "market" in modules:
         m = modules["market"][crop]
         if m["score"] >= 0.6 and m["recent_price"]:
@@ -112,7 +112,8 @@ def _enrich(rec: dict, modules: dict, state, district, season) -> dict:
     crop = rec["crop"]
     reg = modules.get("regional", {}).get(crop, {})
     rec["traditional"] = {"years_grown": int(reg.get("years_grown", 0) or 0),
-                          "level": reg.get("level", "none")}
+                          "level": reg.get("level", "none"),
+                          "window_years": RECENT_YEARS}
     rec["yield"] = predict_yield(state, district, season, crop, year=2016)
     rec["price_outlook"] = price_outlook(state, crop)
     return rec

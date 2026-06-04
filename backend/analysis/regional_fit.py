@@ -4,6 +4,11 @@ Turns district_crop_history into a 0-1 "how regionally proven is this crop here"
 signal. Statistical lookup, no ML (per the design): a crop scores high in a
 location when it has been grown there consistently (many years) and in volume.
 
+Recency window: only the most recent `RECENT_YEARS` of available data count
+(relative to the data's latest year), so "traditional/regional" reflects what is
+grown there *now*, not what was grown decades ago. A crop that was large 15-20
+years ago but has since dropped off no longer scores as regionally proven.
+
 Scope resolution: use district-level history if a district is given and has data,
 else fall back to state-level. Scores are normalized so the most-established crop
 in the region = 1.0, making "regional fit" relative to what actually thrives there.
@@ -21,6 +26,16 @@ from analysis.crop_catalog import WHITELIST
 # weight split between "grown consistently" and "grown in volume"
 W_CONSISTENCY = 0.5
 W_VOLUME = 0.5
+
+# Only the most recent N years of data inform the regional/traditional signal.
+RECENT_YEARS = 10
+
+
+def _max_crop_year() -> int | None:
+    r = query("SELECT MAX(crop_year) AS m FROM district_crop_history")
+    if r.empty or r.iloc[0]["m"] is None:
+        return None
+    return int(r.iloc[0]["m"])
 
 
 def _aggregate(extra_where: str, params: tuple):
@@ -48,8 +63,13 @@ def _empty(crops):
 
 
 def regional_fit_scores(state: str, district: str | None = None,
-                        season: str | None = None, crops=None) -> dict:
-    """Map of {canonical_crop: {score 0-1, level, years_grown, total_production, avg_yield}}."""
+                        season: str | None = None, crops=None,
+                        recent_years: int = RECENT_YEARS) -> dict:
+    """Map of {canonical_crop: {score 0-1, level, years_grown, total_production, avg_yield}}.
+
+    Only the most recent `recent_years` of data (relative to the dataset's latest
+    crop_year) are counted, so the signal reflects current growing patterns.
+    """
     crops = list(crops) if crops else WHITELIST
     results = _empty(crops)
     if not table_exists("district_crop_history"):
@@ -59,15 +79,26 @@ def regional_fit_scores(state: str, district: str | None = None,
     if season:
         season_clause, season_params = " AND LOWER(season) = LOWER(?)", (season,)
 
+    # Restrict to the recent window relative to the dataset's latest year.
+    recent_clause, recent_params = "", ()
+    if recent_years and recent_years > 0:
+        max_year = _max_crop_year()
+        if max_year is not None:
+            recent_clause = " AND crop_year >= ?"
+            recent_params = (max_year - (recent_years - 1),)
+
+    tail_clause = season_clause + recent_clause
+    tail_params = season_params + recent_params
+
     df, total_years, level = None, 0, "none"
     if district:
-        where = " AND LOWER(state)=LOWER(?) AND LOWER(district)=LOWER(?)" + season_clause
-        df, total_years = _aggregate(where, (state, district) + season_params)
+        where = " AND LOWER(state)=LOWER(?) AND LOWER(district)=LOWER(?)" + tail_clause
+        df, total_years = _aggregate(where, (state, district) + tail_params)
         if not df.empty:
             level = "district"
     if df is None or df.empty:
-        where = " AND LOWER(state)=LOWER(?)" + season_clause
-        df, total_years = _aggregate(where, (state,) + season_params)
+        where = " AND LOWER(state)=LOWER(?)" + tail_clause
+        df, total_years = _aggregate(where, (state,) + tail_params)
         if not df.empty:
             level = "state"
 
