@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts'
 import { getCropMarkup, getTrendFilters } from '../api/client'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorBanner from '../components/ErrorBanner'
+import PageHeader from '@/components/PageHeader'
+import { Card, CardContent } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+const AXIS = '#78716C'
+const GREEN = '#2E6B43'
+const HIGH = '#B3261E'
 
 export default function CropAnalyser() {
   const { crop, setCrop } = useWorkspace()
@@ -34,24 +41,32 @@ export default function CropAnalyser() {
   }, [selected])
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-green-800 mb-2">Crop Markup by State</h1>
+    <div className="max-w-4xl w-full">
+      <PageHeader title="Crop Markup by State"
+        subtitle="How far farm-gate prices sit below market prices, state by state. The highest markups (worst for farmers) are flagged." />
       {error && <ErrorBanner message={error} />}
-      <select className="border rounded px-3 py-2 mb-4 text-sm"
-        value={selected} onChange={e => setSelected(e.target.value)}>
-        {crops.map(c => <option key={c}>{c}</option>)}
-      </select>
+      <div className="flex gap-3 mb-4">
+        <Select value={selected || ''} onValueChange={setSelected}>
+          <SelectTrigger className="w-48 bg-card"><SelectValue placeholder="Crop" /></SelectTrigger>
+          <SelectContent>{crops.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
       {loading ? <LoadingSpinner /> : (
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={data} layout="vertical" margin={{ left: 100 }}>
-            <XAxis type="number" unit="%" />
-            <YAxis dataKey="state" type="category" width={100} tick={{ fontSize: 12 }} />
-            <Tooltip formatter={v => `${v}%`} />
-            <Bar dataKey="avg_markup_pct" name="Markup %">
-              {data.map((_, i) => <Cell key={i} fill={i < 5 ? '#dc2626' : '#16a34a'} />)}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        <Card>
+          <CardContent className="p-4">
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={data} layout="vertical" margin={{ left: 100 }}>
+                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" unit="%" tick={{ fontSize: 11, fill: AXIS }} stroke={AXIS} />
+                <YAxis dataKey="state" type="category" width={100} tick={{ fontSize: 12, fill: AXIS }} stroke={AXIS} />
+                <Tooltip formatter={v => `${v}%`} cursor={{ fill: 'hsl(var(--muted))' }} />
+                <Bar dataKey="avg_markup_pct" name="Markup %" radius={[0, 3, 3, 0]}>
+                  {data.map((_, i) => <Cell key={i} fill={i < 5 ? HIGH : GREEN} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       )}
     </div>
   )

@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine, CartesianGrid } from 'recharts'
 import { getForecastAvailable, getPriceTrend, getForecast } from '../api/client'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorBanner from '../components/ErrorBanner'
+import PageHeader from '@/components/PageHeader'
+import { Card, CardContent } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+const AXIS = '#78716C'
+const GREEN = '#2E6B43'
+const CLAY = '#B5611F'
 
 export default function Forecast() {
   const { state: ctxState } = useWorkspace()
@@ -21,9 +28,8 @@ export default function Forecast() {
     getForecastAvailable()
       .then(map => {
         setAvail(map)
-        const states = Object.keys(map)
-        // Open on a known-good pair so the page shows a real forecast immediately.
-        const s0 = map[ctxState] ? ctxState : map['Punjab'] ? 'Punjab' : states[0] || ''
+        const sts = Object.keys(map)
+        const s0 = map[ctxState] ? ctxState : map['Punjab'] ? 'Punjab' : sts[0] || ''
         const c0 = s0 ? (map[s0].includes('Wheat') ? 'Wheat' : map[s0][0]) : ''
         setState(s0)
         setCommodity(c0)
@@ -31,7 +37,6 @@ export default function Forecast() {
       .catch(e => setError(e.message))
   }, [])
 
-  // Keep commodity valid whenever the state changes.
   const onStateChange = (s) => {
     setState(s)
     const list = avail[s] || []
@@ -54,34 +59,40 @@ export default function Forecast() {
   const splitPeriod = combined.find(r => r.is_forecast)?.period
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-green-800 mb-2">Price Forecast (LSTM)</h1>
-      <p className="text-gray-500 text-sm mb-4">
-        Historical (last 12 months) + 6-month LSTM prediction. Dashed line marks forecast start.
-        Only states &amp; crops with a trained model are listed ({states.length} states).
-      </p>
-      <div className="flex gap-4 mb-4">
-        <select className="border rounded px-3 py-2 text-sm" value={state} onChange={e => onStateChange(e.target.value)}>
-          {states.map(s => <option key={s}>{s}</option>)}
-        </select>
-        <select className="border rounded px-3 py-2 text-sm" value={commodity} onChange={e => setCommodity(e.target.value)}>
-          {commodities.map(c => <option key={c}>{c}</option>)}
-        </select>
+    <div className="max-w-4xl w-full">
+      <PageHeader title="Price Forecast (LSTM)"
+        subtitle={`Historical (last 12 months) plus 6-month LSTM prediction. The dashed line marks where the forecast begins. Only states and crops with a trained model are listed (${states.length} states).`} />
+
+      <div className="flex flex-wrap gap-3 mb-4">
+        <Select value={state} onValueChange={onStateChange}>
+          <SelectTrigger className="w-48 bg-card"><SelectValue placeholder="State" /></SelectTrigger>
+          <SelectContent>{states.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+        </Select>
+        <Select value={commodity} onValueChange={setCommodity}>
+          <SelectTrigger className="w-48 bg-card"><SelectValue placeholder="Commodity" /></SelectTrigger>
+          <SelectContent>{commodities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+        </Select>
       </div>
+
       {error ? (
         <ErrorBanner message={error} />
       ) : loading ? <LoadingSpinner /> : (
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={combined}>
-            <XAxis dataKey="period" tick={{ fontSize: 10 }} />
-            <YAxis unit="₹" />
-            <Tooltip formatter={v => `₹${v}`} />
-            <Legend />
-            {splitPeriod && <ReferenceLine x={splitPeriod} stroke="#666" strokeDasharray="4 4" label="Forecast →" />}
-            <Line type="monotone" dataKey="farm_gate_price" stroke="#16a34a" name="Farm Gate ₹" dot={false} strokeWidth={2} />
-            <Line type="monotone" dataKey="modal_price" stroke="#dc2626" name="Market Price ₹" dot={false} strokeWidth={2} />
-          </LineChart>
-        </ResponsiveContainer>
+        <Card>
+          <CardContent className="p-4">
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={combined}>
+                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="period" tick={{ fontSize: 10, fill: AXIS }} stroke={AXIS} />
+                <YAxis unit="₹" tick={{ fontSize: 11, fill: AXIS }} stroke={AXIS} />
+                <Tooltip formatter={v => `₹${v}`} />
+                <Legend />
+                {splitPeriod && <ReferenceLine x={splitPeriod} stroke={AXIS} strokeDasharray="4 4" label="Forecast →" />}
+                <Line type="monotone" dataKey="farm_gate_price" stroke={GREEN} name="Farm Gate ₹" dot={false} strokeWidth={2} />
+                <Line type="monotone" dataKey="modal_price" stroke={CLAY} name="Market Price ₹" dot={false} strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       )}
     </div>
   )

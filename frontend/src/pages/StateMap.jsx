@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import { getStateMarkup } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorBanner from '../components/ErrorBanner'
+import PageHeader from '@/components/PageHeader'
 
 function getColor(pct) {
   if (pct > 150) return '#800026'
@@ -56,23 +57,38 @@ export default function StateMap() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-green-800 mb-2">Farm-to-Market Markup by State</h1>
-      <p className="text-gray-500 mb-4 text-sm">Darker red = higher markup. Click a state for details.</p>
-      <div className="flex gap-6">
-        <MapContainer center={[22, 82]} zoom={5} style={{ height: '500px', width: '65%' }}>
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a>' />
-          {geoData && <GeoJSON data={geoData} style={styleFeature} onEachFeature={onEachFeature} />}
-        </MapContainer>
-        {selected && (
-          <div className="bg-green-50 border border-green-200 rounded p-4 w-64 h-fit">
-            <h3 className="font-bold text-green-800 text-lg">{selected.state}</h3>
-            <p className="text-sm text-gray-600 mt-2">
-              Avg Markup: <span className="font-bold text-red-600">{selected.avg_markup_pct ?? 'N/A'}%</span>
-            </p>
-            <p className="text-sm text-gray-600">Farm Gate: &#8377;{selected.avg_farm_gate ?? 'N/A'}/q</p>
-            <p className="text-sm text-gray-600">Market Price: &#8377;{selected.avg_modal ?? 'N/A'}/q</p>
+    <div className="max-w-5xl w-full">
+      <PageHeader title="Farm-to-Market Markup by State"
+        subtitle="Darker shading marks a wider gap between farm-gate and market price. Click a state for details." />
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="rounded-lg overflow-hidden border border-border" style={{ width: '65%', minWidth: 0 }}>
+          <MapContainer center={[22, 82]} zoom={5} style={{ height: '500px', width: '100%' }}>
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a>' />
+            {geoData && <GeoJSON data={geoData} style={styleFeature} onEachFeature={onEachFeature} />}
+          </MapContainer>
+        </div>
+        {selected ? (
+          <div className="bg-card border border-border rounded-lg p-5 w-64 h-fit">
+            <h3 className="font-display font-semibold text-foreground text-lg">{selected.state}</h3>
+            <dl className="mt-3 space-y-1.5 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">Avg markup</dt>
+                <dd className="font-semibold text-destructive tabular-nums">{selected.avg_markup_pct ?? 'N/A'}%</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">Farm gate</dt>
+                <dd className="tabular-nums text-foreground">₹{selected.avg_farm_gate ?? 'N/A'}/q</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">Market price</dt>
+                <dd className="tabular-nums text-foreground">₹{selected.avg_modal ?? 'N/A'}/q</dd>
+              </div>
+            </dl>
+          </div>
+        ) : (
+          <div className="bg-secondary border border-border rounded-lg p-5 w-64 h-fit text-sm text-muted-foreground">
+            Click any state on the map to see its markup, farm-gate, and market price.
           </div>
         )}
       </div>

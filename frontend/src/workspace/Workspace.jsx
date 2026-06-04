@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Sprout } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { getTrendFilters } from '../api/client'
 import { useWorkspace } from './WorkspaceContext'
 import ContextBar from './ContextBar'
@@ -50,31 +53,57 @@ export default function Workspace({ initialIntent = 'grow', initialTool = null }
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <header className="bg-primary text-primary-foreground px-4 md:px-6 py-3 flex items-center justify-between">
-        <span className="font-bold">🌾 Agri Market Analyser</span>
-        <ModeToggle />
+      <header className="border-b border-border">
+        <div className="mx-auto max-w-[1100px] px-6 py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <Sprout className="h-6 w-6 text-primary" />
+            <span className="font-display font-semibold text-lg text-foreground">Crop Analyser</span>
+          </Link>
+          <ModeToggle />
+        </div>
       </header>
 
       <ContextBar states={states} />
 
-      <nav className="flex gap-2 px-4 md:px-6 pt-3 flex-wrap">
-        {INTENTS.map((i) => (
-          <button key={i.id} onClick={() => pickIntent(i.id)}
-            className={`px-3 py-2 rounded-t-lg text-sm font-medium transition-colors ${i.id === intentId ? 'bg-card border border-b-0 border-border text-primary' : 'bg-secondary text-secondary-foreground hover:bg-muted'}`}>
-            {i.label}
-          </button>
-        ))}
-      </nav>
-      <div className="flex gap-3 px-4 md:px-6 border-b border-border text-sm">
-        {intent.tools.map((t) => (
-          <button key={t.id} onClick={() => setToolId(t.id)}
-            className={`py-2 transition-colors ${t.id === toolId ? 'text-primary font-semibold border-b-2 border-primary' : 'text-muted-foreground hover:text-primary'}`}>
-            {t.label}
-          </button>
-        ))}
+      <div className="border-b border-border">
+        <div className="mx-auto max-w-[1100px] px-6">
+          <nav className="flex gap-1 flex-wrap" aria-label="Workspace intent">
+            {INTENTS.map((i) => (
+              <button key={i.id} onClick={() => pickIntent(i.id)}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors',
+                  i.id === intentId
+                    ? 'border-primary text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border',
+                )}>
+                {i.label}
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
 
-      <main className="p-6 flex-1"><Tool /></main>
+      <div className="bg-secondary/40 border-b border-border">
+        <div className="mx-auto max-w-[1100px] px-6">
+          <div className="flex gap-1 flex-wrap py-1.5">
+            {intent.tools.map((t) => (
+              <button key={t.id} onClick={() => setToolId(t.id)}
+                className={cn(
+                  'px-3 py-1.5 text-sm rounded-md transition-colors',
+                  t.id === toolId
+                    ? 'bg-card text-primary font-medium shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <main className="flex-1 py-8">
+        <div className="mx-auto max-w-[1100px] px-6"><Tool /></div>
+      </main>
     </div>
   )
 }

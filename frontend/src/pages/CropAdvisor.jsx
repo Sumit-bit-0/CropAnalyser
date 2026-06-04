@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { recommendSmart } from '../api/client'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import ErrorBanner from '../components/ErrorBanner'
@@ -86,7 +87,10 @@ export default function CropAdvisor() {
           </p>
           <div className="space-y-3">
             {result.recommendations.map((r, i) => (
-              <Card key={r.crop} className={i === 0 ? 'border-primary bg-secondary' : ''}>
+              <motion.div key={r.crop}
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05, duration: 0.2 }}>
+              <Card className={i === 0 ? 'border-primary bg-secondary' : ''}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-sm font-bold">
@@ -144,6 +148,7 @@ export default function CropAdvisor() {
                   {r.cautions.map((c) => <p key={c} className="text-sm text-accent">⚠ {c}</p>)}
                 </CardContent>
               </Card>
+              </motion.div>
             ))}
           </div>
         </div>

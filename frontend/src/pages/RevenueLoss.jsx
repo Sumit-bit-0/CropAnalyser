@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { getRevenueLoss } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorBanner from '../components/ErrorBanner'
+import PageHeader from '@/components/PageHeader'
+import { Card, CardContent } from '@/components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+
+const AXIS = '#78716C'
+const LOSS = '#B3261E'
 
 export default function RevenueLoss() {
   const [data, setData]       = useState([])
@@ -19,36 +25,48 @@ export default function RevenueLoss() {
   const total = data.reduce((s, r) => s + r.estimated_loss_cr, 0).toFixed(2)
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-green-800 mb-1">Estimated Revenue Loss to Farmers</h1>
-      <p className="text-gray-500 text-sm mb-4">Estimated ₹{total} Cr total annual loss across all states (proxy volume model)</p>
+    <div className="max-w-4xl w-full">
+      <PageHeader title="Estimated Revenue Loss to Farmers"
+        subtitle={`About ₹${total} Cr in total annual loss across all states (proxy volume model).`} />
       {error && <ErrorBanner message={error} />}
       {loading ? <LoadingSpinner /> : (
         <>
-          <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={data.slice(0, 15)}>
-              <XAxis dataKey="state" tick={{ fontSize: 10 }} />
-              <YAxis unit=" Cr" />
-              <Tooltip formatter={v => `₹${v} Cr`} />
-              <Bar dataKey="estimated_loss_cr" fill="#dc2626" name="Est. Loss (₹ Cr)" />
-            </BarChart>
-          </ResponsiveContainer>
-          <table className="mt-6 w-full text-sm border-collapse">
-            <thead><tr className="bg-green-800 text-white">
-              <th className="p-2 text-left">State</th>
-              <th className="p-2">Avg Gap (₹/q)</th>
-              <th className="p-2">Est. Loss (₹ Cr)</th>
-              <th className="p-2">Crops Tracked</th>
-            </tr></thead>
-            <tbody>{data.map((r, i) => (
-              <tr key={r.state} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
-                <td className="p-2 font-medium">{r.state}</td>
-                <td className="p-2 text-center">₹{r.avg_gap_per_quintal}</td>
-                <td className="p-2 text-center text-red-600 font-bold">₹{r.estimated_loss_cr} Cr</td>
-                <td className="p-2 text-center">{r.crop_count}</td>
-              </tr>
-            ))}</tbody>
-          </table>
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={data.slice(0, 15)}>
+                  <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="state" tick={{ fontSize: 10, fill: AXIS }} stroke={AXIS} />
+                  <YAxis unit=" Cr" tick={{ fontSize: 11, fill: AXIS }} stroke={AXIS} />
+                  <Tooltip formatter={v => `₹${v} Cr`} cursor={{ fill: 'hsl(var(--muted))' }} />
+                  <Bar dataKey="estimated_loss_cr" fill={LOSS} name="Est. Loss (₹ Cr)" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>State</TableHead>
+                  <TableHead className="text-right">Avg Gap (₹/q)</TableHead>
+                  <TableHead className="text-right">Est. Loss (₹ Cr)</TableHead>
+                  <TableHead className="text-right">Crops Tracked</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.map((r) => (
+                  <TableRow key={r.state}>
+                    <TableCell className="font-medium">{r.state}</TableCell>
+                    <TableCell className="text-right tabular-nums">₹{r.avg_gap_per_quintal}</TableCell>
+                    <TableCell className="text-right tabular-nums font-semibold text-destructive">₹{r.estimated_loss_cr} Cr</TableCell>
+                    <TableCell className="text-right tabular-nums">{r.crop_count}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </>
       )}
     </div>

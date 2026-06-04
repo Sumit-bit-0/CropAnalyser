@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { WorkspaceProvider } from './workspace/WorkspaceContext'
 import Workspace from './workspace/Workspace'
+import Landing from './pages/Landing'
 
 // Old routes deep-link into the workspace with the right intent + sub-tab.
 const DEEP_LINKS = {
@@ -16,7 +17,8 @@ export default function App() {
     <BrowserRouter>
       <WorkspaceProvider>
         <Routes>
-          <Route path="/" element={<Workspace />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/workspace" element={<Workspace />} />
           {Object.entries(DEEP_LINKS).map(([path, [i, t]]) => (
             <Route key={path} path={path} element={<Workspace initialIntent={i} initialTool={t} />} />
           ))}

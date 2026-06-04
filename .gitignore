@@ -1,20 +1,21 @@
-data/raw/
-data/processed/
-saved_models/
-**/__pycache__/
-*.pyc
-.env
-.env.local
-.env.*.local
-venv/
-node_modules/
-frontend/dist/
-.pytest_cache/
-htmlcov/
-vite-*.txt
-*.log
-data/*.db
-# Large raw pincode source files (root) — only the generated data/raw/india_pincodes.csv is tracked
-all_india_pincode_directory_2025.csv
-Pincode_Dataset.csv
-pincodes.csv
+# v0 sandbox internal files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.v0-trash/
+.vercel/
+
+# Environment variables
+.env*.local
+
+# Common ignores
+node_modules
+.next/
+.DS_Store
+
+# Superpowers brainstorm scratch
+.superpowers/
+
+# v0 raw import dump (Next.js scaffold — reference only, ported into frontend/)
+frontendv0/

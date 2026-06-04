@@ -4,26 +4,30 @@
 
 @layer base {
   :root {
-    --background: 40 33% 97%;       /* warm stone-50 */
-    --foreground: 30 12% 16%;       /* stone-800 text */
+    /* Warm Editorial Agritech — paper off-white palette (see DESIGN.md) */
+    --background: 60 14% 99%;       /* true paper off-white */
+    --foreground: 30 8% 15%;        /* stone-900 ink */
     --card: 0 0% 100%;
-    --card-foreground: 30 12% 16%;
+    --card-foreground: 30 8% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 30 12% 16%;
-    --primary: 142 40% 30%;         /* green-700 */
-    --primary-foreground: 40 33% 97%;
-    --secondary: 36 40% 92%;        /* amber-tinted surface */
-    --secondary-foreground: 30 12% 16%;
-    --muted: 36 20% 90%;
-    --muted-foreground: 30 8% 42%;
-    --accent: 28 72% 34%;           /* amber/clay accent */
-    --accent-foreground: 30 12% 16%;
-    --destructive: 0 72% 45%;
-    --destructive-foreground: 40 33% 97%;
-    --border: 30 14% 86%;
-    --input: 30 14% 86%;
+    --popover-foreground: 30 8% 15%;
+    --primary: 142 40% 30%;         /* deep green */
+    --primary-foreground: 60 14% 99%;
+    --secondary: 38 26% 94%;        /* warm-stone panel */
+    --secondary-foreground: 30 8% 15%;
+    --muted: 38 26% 94%;
+    --muted-foreground: 36 8% 39%;  /* AA on paper */
+    --accent: 26 65% 42%;           /* clay */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 3 71% 41%;
+    --destructive-foreground: 60 14% 99%;
+    --border: 39 24% 87%;
+    --input: 39 24% 87%;
     --ring: 142 40% 30%;
     --radius: 0.5rem;
+
+    --font-display: "Fraunces", Georgia, serif;
+    --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   }
 
   * {
@@ -33,5 +37,31 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Editorial headings default to the display serif (overridable per element) */
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+}
+
+@layer utilities {
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Reduced motion: collapse all animation/transition */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

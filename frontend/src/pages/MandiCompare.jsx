@@ -79,13 +79,13 @@ export default function MandiCompare() {
               </TableHeader>
               <TableBody>
                 {markets.map((r, i) => (
-                  <TableRow key={i} className={r.is_best_net ? 'bg-secondary font-medium' : ''}>
-                    <TableCell>{r.market}</TableCell>
+                  <TableRow key={i} className={r.is_best_net ? 'bg-primary/5 font-medium' : ''}>
+                    <TableCell className={r.is_best_net ? 'text-primary font-medium' : ''}>{r.market}</TableCell>
                     <TableCell>{r.district}, {r.state}</TableCell>
-                    <TableCell>₹{r.modal_price}</TableCell>
-                    <TableCell>{r.distance_km != null ? `${r.distance_km} km` : '—'}</TableCell>
-                    <TableCell>₹{r.transport_per_q}</TableCell>
-                    <TableCell>₹{r.net_price}</TableCell>
+                    <TableCell className="tabular-nums">₹{r.modal_price}</TableCell>
+                    <TableCell className="tabular-nums text-muted-foreground">{r.distance_km != null ? `${r.distance_km} km` : '—'}</TableCell>
+                    <TableCell className="tabular-nums text-muted-foreground">−₹{r.transport_per_q}</TableCell>
+                    <TableCell className={`tabular-nums font-semibold ${r.is_best_net ? 'text-primary' : 'text-accent'}`}>₹{r.net_price}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

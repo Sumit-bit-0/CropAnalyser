@@ -13,28 +13,30 @@ export default function ContextBar({ states }) {
   const { season, setSeason, mode } = useWorkspace()
   const [showSoil, setShowSoil] = useState(false)
   return (
-    <div className="bg-card border-b border-border px-4 md:px-6 py-3">
-      <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
-        <LocationPicker states={states} />
-        <CropPicker />
-        <label className="text-sm text-foreground">Season
-          <Select value={season} onValueChange={setSeason}>
-            <SelectTrigger className="mt-1 w-40">
-              <SelectValue placeholder="Season" />
-            </SelectTrigger>
-            <SelectContent>
-              {SEASONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </label>
-        {mode === 'smart' && (
-          <button type="button" onClick={() => setShowSoil((v) => !v)}
-            className="text-sm text-primary hover:text-primary/80 pb-2">
-            {showSoil ? '▾' : '▸'} Soil details
-          </button>
-        )}
+    <div className="sticky top-0 z-20 bg-secondary border-b border-border">
+      <div className="mx-auto max-w-[1100px] px-6 py-3">
+        <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+          <LocationPicker states={states} />
+          <CropPicker />
+          <label className="text-sm text-foreground">Season
+            <Select value={season} onValueChange={setSeason}>
+              <SelectTrigger className="mt-1 w-40 bg-card">
+                <SelectValue placeholder="Season" />
+              </SelectTrigger>
+              <SelectContent>
+                {SEASONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </label>
+          {mode === 'smart' && (
+            <button type="button" onClick={() => setShowSoil((v) => !v)}
+              className="text-sm text-primary hover:text-primary/80 pb-2">
+              {showSoil ? '▾' : '▸'} Soil details
+            </button>
+          )}
+        </div>
+        {mode === 'smart' && showSoil && <SoilPanel />}
       </div>
-      {mode === 'smart' && showSoil && <SoilPanel />}
     </div>
   )
 }
