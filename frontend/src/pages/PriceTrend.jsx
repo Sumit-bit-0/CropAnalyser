@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { getTrendFilters, getPriceTrend } from '../api/client'
 import { useWorkspace } from '../workspace/WorkspaceContext'
@@ -13,6 +14,7 @@ const GREEN = '#2E6B43'
 const CLAY = '#B5611F'
 
 export default function PriceTrend() {
+  const { t } = useTranslation()
   const { state, crop, setCrop } = useWorkspace()
   const [filters, setFilters]     = useState({ states: [], commodities: [] })
   const commodity = crop
@@ -42,12 +44,11 @@ export default function PriceTrend() {
 
   return (
     <div className="max-w-4xl w-full">
-      <PageHeader title="Price Trend Over Time"
-        subtitle="Farm-gate versus market price month by month for your selected crop and state." />
+      <PageHeader title={t('pg.trend.title')} subtitle={t('pg.trend.subtitle')} />
       {error && <ErrorBanner message={error} />}
       <div className="flex gap-3 mb-4">
         <Select value={commodity || ''} onValueChange={setCommodity}>
-          <SelectTrigger className="w-48 bg-card"><SelectValue placeholder="Commodity" /></SelectTrigger>
+          <SelectTrigger className="w-48 bg-card"><SelectValue placeholder={t('pg.profit.commodity')} /></SelectTrigger>
           <SelectContent>{filters.commodities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
         </Select>
       </div>
@@ -61,8 +62,8 @@ export default function PriceTrend() {
                 <YAxis unit="₹" tick={{ fontSize: 11, fill: AXIS }} stroke={AXIS} />
                 <Tooltip formatter={v => `₹${v}`} />
                 <Legend />
-                <Line type="monotone" dataKey="farm_gate_price" stroke={GREEN} name="Farm Gate ₹" dot={false} strokeWidth={2} />
-                <Line type="monotone" dataKey="modal_price" stroke={CLAY} name="Market Price ₹" dot={false} strokeWidth={2} />
+                <Line type="monotone" dataKey="farm_gate_price" stroke={GREEN} name={t('pg.trend.farmGate')} dot={false} strokeWidth={2} />
+                <Line type="monotone" dataKey="modal_price" stroke={CLAY} name={t('pg.trend.marketPrice')} dot={false} strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>

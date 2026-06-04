@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import { useTranslation } from 'react-i18next'
 import { getStateMarkup } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorBanner from '../components/ErrorBanner'
@@ -17,6 +18,7 @@ function getColor(pct) {
 }
 
 export default function StateMap() {
+  const { t } = useTranslation()
   const [markupMap, setMarkupMap] = useState({})
   const [geoData, setGeoData]     = useState(null)
   const [selected, setSelected]   = useState(null)
@@ -58,8 +60,7 @@ export default function StateMap() {
 
   return (
     <div className="max-w-5xl w-full">
-      <PageHeader title="Farm-to-Market Markup by State"
-        subtitle="Darker shading marks a wider gap between farm-gate and market price. Click a state for details." />
+      <PageHeader title={t('pg.map.title')} subtitle={t('pg.map.subtitle')} />
       <div className="flex flex-col md:flex-row gap-6">
         <div className="rounded-lg overflow-hidden border border-border" style={{ width: '65%', minWidth: 0 }}>
           <MapContainer center={[22, 82]} zoom={5} style={{ height: '500px', width: '100%' }}>
@@ -73,22 +74,22 @@ export default function StateMap() {
             <h3 className="font-display font-semibold text-foreground text-lg">{selected.state}</h3>
             <dl className="mt-3 space-y-1.5 text-sm">
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Avg markup</dt>
+                <dt className="text-muted-foreground">{t('pg.map.avgMarkup')}</dt>
                 <dd className="font-semibold text-destructive tabular-nums">{selected.avg_markup_pct ?? 'N/A'}%</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Farm gate</dt>
+                <dt className="text-muted-foreground">{t('pg.map.farmGate')}</dt>
                 <dd className="tabular-nums text-foreground">₹{selected.avg_farm_gate ?? 'N/A'}/q</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Market price</dt>
+                <dt className="text-muted-foreground">{t('pg.map.marketPrice')}</dt>
                 <dd className="tabular-nums text-foreground">₹{selected.avg_modal ?? 'N/A'}/q</dd>
               </div>
             </dl>
           </div>
         ) : (
           <div className="bg-secondary border border-border rounded-lg p-5 w-64 h-fit text-sm text-muted-foreground">
-            Click any state on the map to see its markup, farm-gate, and market price.
+            {t('pg.map.prompt')}
           </div>
         )}
       </div>

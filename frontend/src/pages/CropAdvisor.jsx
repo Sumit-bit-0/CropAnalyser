@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { recommendSmart } from '../api/client'
 import { useWorkspace } from '../workspace/WorkspaceContext'
@@ -10,18 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { MODULE_COLORS } from '@/lib/chartColors'
 
-const GOALS = [
-  ['', 'Balanced'], ['max_profit', 'Max Profit'], ['low_risk', 'Low Risk'],
-  ['sustainable', 'Sustainable'], ['water_efficient', 'Water Efficient'],
-]
-const MODULES = [
-  ['suitability', 'Soil/Climate'], ['regional', 'Regional'],
-  ['market', 'Market'], ['weather', 'Weather'],
-]
+const GOALS = ['balanced', 'max_profit', 'low_risk', 'sustainable', 'water_efficient']
+const MODULES = ['suitability', 'regional', 'market', 'weather']
 const TREND = { rising: '↗', flat: '→', falling: '↘' }
-const trendColor = (t) => (t === 'rising' ? 'text-primary' : t === 'falling' ? 'text-destructive' : 'text-muted-foreground')
+const trendColor = (x) => (x === 'rising' ? 'text-primary' : x === 'falling' ? 'text-destructive' : 'text-muted-foreground')
 
 export default function CropAdvisor() {
+  const { t } = useTranslation()
   const { state, district, season, lat, lon, mode, soil, setCrop } = useWorkspace()
   const [goal, setGoal] = useState('')
   const [result, setResult] = useState(null)
@@ -48,42 +44,41 @@ export default function CropAdvisor() {
 
   return (
     <div className="max-w-3xl w-full">
-      <PageHeader title="🌱 Crop Advisor"
-        subtitle="Best crops for your field — regional history, market prices, and live seasonal weather. Switch to Smart mode and add soil details for a sharper agronomic match." />
+      <PageHeader title={`🌱 ${t('pg.advisor.title')}`} subtitle={t('pg.advisor.subtitle')} />
       {error && <ErrorBanner message={error} />}
 
       <Card className="mb-6">
         <CardContent className="p-4 flex flex-wrap items-end gap-3">
-          <label className="text-sm text-foreground">Goal
+          <label className="text-sm text-foreground">{t('goal.label')}
             <Select value={goal || 'balanced'} onValueChange={(v) => setGoal(v === 'balanced' ? '' : v)}>
-              <SelectTrigger className="mt-1 w-44"><SelectValue placeholder="Balanced" /></SelectTrigger>
+              <SelectTrigger className="mt-1 w-44"><SelectValue placeholder={t('goal.balanced')} /></SelectTrigger>
               <SelectContent>
-                {GOALS.map(([v, l]) => <SelectItem key={v || 'balanced'} value={v || 'balanced'}>{l}</SelectItem>)}
+                {GOALS.map((g) => <SelectItem key={g} value={g}>{t(`goal.${g}`)}</SelectItem>)}
               </SelectContent>
             </Select>
           </label>
           <Button onClick={submit} disabled={loading} size="lg">
-            {loading ? 'Analyzing…' : 'Recommend crops'}
+            {loading ? t('pg.advisor.analyzing') : t('pg.advisor.recommend')}
           </Button>
           {mode !== 'smart' && (
-            <span className="text-xs text-muted-foreground">Simple Mode · turn on Smart for soil suitability</span>
+            <span className="text-xs text-muted-foreground">{t('pg.advisor.simpleHint')}</span>
           )}
         </CardContent>
       </Card>
 
       {!result && !loading && (
         <div className="text-center text-muted-foreground border border-dashed border-border rounded-lg py-10">
-          Set your location above, then hit <span className="font-medium text-foreground">Recommend crops</span>.
+          {t('pg.advisor.empty')}
         </div>
       )}
 
       {result && (
         <div>
           <p className="text-xs text-muted-foreground mb-3 flex items-center gap-2 flex-wrap">
-            <Badge variant={isSmart ? 'default' : 'secondary'}>{isSmart ? 'Smart Mode' : 'Simple Mode'}</Badge>
-            <span>{result.method} fusion ·{' '}
+            <Badge variant={isSmart ? 'default' : 'secondary'}>{isSmart ? t('badge.smartMode') : t('badge.simpleMode')}</Badge>
+            <span>{t('pg.advisor.fusion', { method: result.method })} ·{' '}
             {Object.entries(result.weights_used).map(([m, w]) =>
-              `${MODULES.find((x) => x[0] === m)?.[1] || m} ${Math.round(w * 100)}%`).join(' · ')}</span>
+              `${t(`mod.${m}`)} ${Math.round(w * 100)}%`).join(' · ')}</span>
           </p>
           <div className="space-y-3">
             {result.recommendations.map((r, i) => (
@@ -97,17 +92,16 @@ export default function CropAdvisor() {
                       {i + 1}
                     </span>
                     <span className="font-bold capitalize text-foreground text-lg">{r.crop}</span>
-                    {i === 0 && <Badge>Best pick</Badge>}
-                    <span className="ml-auto text-xs text-muted-foreground">match {r.score}</span>
+                    {i === 0 && <Badge>{t('pg.advisor.bestPick')}</Badge>}
+                    <span className="ml-auto text-xs text-muted-foreground">{t('pg.advisor.match', { score: r.score })}</span>
                   </div>
                   <Button type="button" variant="link" size="sm" className="px-0 h-auto mb-2"
                     onClick={() => setCrop(r.crop)}>
-                    See market &amp; prices for {r.crop} →
+                    {t('pg.advisor.seePrices', { crop: r.crop })} →
                   </Button>
                   {r.traditional?.years_grown > 0 && (
                     <p className="text-sm text-primary font-medium mb-1">
-                      ✓ Traditional here — grown {r.traditional.years_grown} yr
-                      {r.traditional.years_grown > 1 ? 's' : ''} on record
+                      ✓ Traditional here: grown {r.traditional.years_grown} of the last {r.traditional.window_years ?? 10} years
                       {r.traditional.level === 'state' && ' (state-wide)'}
                     </p>
                   )}
@@ -133,9 +127,9 @@ export default function CropAdvisor() {
                     )}
                   </div>
                   <div className="space-y-1 mb-3 opacity-80">
-                    {MODULES.filter(([m]) => m in r.breakdown).map(([m, label]) => (
+                    {MODULES.filter((m) => m in r.breakdown).map((m) => (
                       <div key={m} className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span className="w-24 shrink-0">{label}</span>
+                        <span className="w-24 shrink-0">{t(`mod.${m}`)}</span>
                         <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
                           <div className="h-2.5 rounded-full"
                             style={{ width: `${Math.round(r.breakdown[m] * 100)}%`, backgroundColor: MODULE_COLORS[m] }} />

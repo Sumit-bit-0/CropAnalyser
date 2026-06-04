@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { compareMandis } from '../api/client'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import ErrorBanner from '../components/ErrorBanner'
@@ -8,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 export default function MandiCompare() {
+  const { t } = useTranslation()
   const { crop, state, lat, lon, area, district } = useWorkspace()
   const coords = lat != null && lon != null ? { lat, lon } : null
   const [rate, setRate] = useState(2)
@@ -31,13 +33,13 @@ export default function MandiCompare() {
 
   return (
     <div className="max-w-4xl w-full">
-      <PageHeader title="Mandi Comparison" subtitle="Nearest markets for your crop, with net price after transport." />
+      <PageHeader title={t('pg.mandi.title')} subtitle={t('pg.mandi.subtitle')} />
       {error && <ErrorBanner message={error} />}
 
-      {!crop && <p className="text-muted-foreground">Pick a crop above to see market prices.</p>}
+      {!crop && <p className="text-muted-foreground">{t('pg.mandi.pickCrop')}</p>}
 
       {crop && (
-        <label className="text-sm inline-block mb-4 text-foreground">Transport ₹/km/quintal
+        <label className="text-sm inline-block mb-4 text-foreground">{t('pg.mandi.transport')}
           <Input type="number" step="any" value={rate} onChange={(e) => setRate(e.target.value)} className="mt-1 w-28" />
         </label>
       )}
@@ -47,13 +49,13 @@ export default function MandiCompare() {
           <CardContent className="p-4">
             <p className="text-lg">State-level estimate for <b className="capitalize">{result.crop}</b> in {result.state}:{' '}
               <span className="font-bold text-primary">₹{result.state_avg}/q</span></p>
-            <p className="text-xs text-accent mt-1">No live mandi data for this crop in your area — showing the state average instead.</p>
+            <p className="text-xs text-accent mt-1">{t('pg.mandi.noLiveData')}</p>
           </CardContent>
         </Card>
       )}
 
       {result?.source === 'none' && (
-        <p className="text-muted-foreground">No market or state price data for <b className="capitalize">{crop}</b>.</p>
+        <p className="text-muted-foreground">{t('pg.mandi.noData')}</p>
       )}
 
       {result?.source === 'mandi' && (
@@ -61,7 +63,7 @@ export default function MandiCompare() {
           {coords ? (
             <p className="text-xs text-muted-foreground mb-3">Using {area || district || 'your location'} ({coords.lat.toFixed(3)}, {coords.lon.toFixed(3)}). Markets ranked by distance.</p>
           ) : (
-            <p className="text-xs text-muted-foreground mb-3">Set a pincode or use GPS above to rank markets by distance.</p>
+            <p className="text-xs text-muted-foreground mb-3">{t('pg.mandi.setLoc')}</p>
           )}
           {best && (
             <p className="text-lg mb-3">Best net price near you:{' '}
@@ -72,9 +74,9 @@ export default function MandiCompare() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Market</TableHead><TableHead>District</TableHead>
-                  <TableHead>Modal ₹/q</TableHead><TableHead>Distance</TableHead>
-                  <TableHead>Transport ₹/q</TableHead><TableHead>Net ₹/q</TableHead>
+                  <TableHead>{t('th.market')}</TableHead><TableHead>{t('th.district')}</TableHead>
+                  <TableHead>{t('th.modalQ')}</TableHead><TableHead>{t('th.distance')}</TableHead>
+                  <TableHead>{t('th.transportQ')}</TableHead><TableHead>{t('th.netQ')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

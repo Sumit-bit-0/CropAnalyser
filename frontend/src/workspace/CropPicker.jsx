@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { getMandiCommodities } from '../api/client'
 import { useWorkspace } from './WorkspaceContext'
 
 export default function CropPicker() {
+  const { t } = useTranslation()
   const { crop, setCrop } = useWorkspace()
   const [crops, setCrops] = useState([])
   const [text, setText] = useState(crop || '')
@@ -17,11 +19,11 @@ export default function CropPicker() {
   }
 
   return (
-    <label className="text-sm text-foreground">Crop
+    <label className="text-sm text-foreground">{t('crop.label')}
       <input list="crop-options" value={text}
         onChange={(e) => setText(e.target.value)}
         onBlur={(e) => commit(e.target.value)}
-        placeholder="e.g. Maize"
+        placeholder={t('crop.placeholder')}
         className="mt-1 block w-44 border border-border rounded px-2 py-2" />
       <datalist id="crop-options">
         {crops.map((c) => (

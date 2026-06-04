@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sprout, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -20,21 +21,21 @@ import PriceTrend from '../pages/PriceTrend'
 import Forecast from '../pages/Forecast'
 
 const INTENTS = [
-  { id: 'grow', label: '🌱 What to grow', tools: [
-    { id: 'advisor', label: 'Crop Advisor', C: CropAdvisor },
-    { id: 'soil', label: 'Soil Match', C: CropRecommender },
+  { id: 'grow', emoji: '🌱', labelKey: 'ws.intent.grow', tools: [
+    { id: 'advisor', labelKey: 'ws.tool.advisor', C: CropAdvisor },
+    { id: 'soil', labelKey: 'ws.tool.soil', C: CropRecommender },
   ] },
-  { id: 'sell', label: '💰 Where & when to sell', tools: [
-    { id: 'mandi', label: 'Mandi Compare', C: MandiCompare },
-    { id: 'profit', label: 'Profit Planner', C: ProfitPlanner },
-    { id: 'fpo', label: 'FPO Bulk Selling', C: FpoBulkDashboard },
+  { id: 'sell', emoji: '💰', labelKey: 'ws.intent.sell', tools: [
+    { id: 'mandi', labelKey: 'ws.tool.mandi', C: MandiCompare },
+    { id: 'profit', labelKey: 'ws.tool.profit', C: ProfitPlanner },
+    { id: 'fpo', labelKey: 'ws.tool.fpo', C: FpoBulkDashboard },
   ] },
-  { id: 'explore', label: '📊 Explore', tools: [
-    { id: 'map', label: 'State Map', C: StateMap },
-    { id: 'crops', label: 'Crop Analyser', C: CropAnalyser },
-    { id: 'revenue', label: 'Revenue Loss', C: RevenueLoss },
-    { id: 'trends', label: 'Price Trend', C: PriceTrend },
-    { id: 'forecast', label: 'Forecast', C: Forecast },
+  { id: 'explore', emoji: '📊', labelKey: 'ws.intent.explore', tools: [
+    { id: 'map', labelKey: 'ws.tool.map', C: StateMap },
+    { id: 'crops', labelKey: 'ws.tool.crops', C: CropAnalyser },
+    { id: 'revenue', labelKey: 'ws.tool.revenue', C: RevenueLoss },
+    { id: 'trends', labelKey: 'ws.tool.trends', C: PriceTrend },
+    { id: 'forecast', labelKey: 'ws.tool.forecast', C: Forecast },
   ] },
 ]
 
@@ -42,6 +43,7 @@ const INTENTS = [
 const SMART_AFFECTS = new Set(['advisor', 'soil'])
 
 export default function Workspace({ initialIntent = 'grow', initialTool = null }) {
+  const { t } = useTranslation()
   const { mode } = useWorkspace()
   const [states, setStates] = useState([])
   const [intentId, setIntentId] = useState(initialIntent)
@@ -86,7 +88,8 @@ export default function Workspace({ initialIntent = 'grow', initialTool = null }
                     ? 'border-primary text-foreground'
                     : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border',
                 )}>
-                {i.label}
+                <span>{i.emoji}</span>
+                <span>{t(i.labelKey)}</span>
               </button>
             ))}
           </nav>
@@ -96,15 +99,15 @@ export default function Workspace({ initialIntent = 'grow', initialTool = null }
       <div className="bg-secondary/40 border-b border-border">
         <div className="mx-auto max-w-[1100px] px-6">
           <div className="flex gap-1 flex-wrap py-1.5">
-            {intent.tools.map((t) => (
-              <button key={t.id} onClick={() => setToolId(t.id)}
+            {intent.tools.map((tl) => (
+              <button key={tl.id} onClick={() => setToolId(tl.id)}
                 className={cn(
                   'px-3 py-1.5 text-sm rounded-md transition-colors',
-                  t.id === toolId
+                  tl.id === toolId
                     ? 'bg-card text-primary font-medium shadow-sm'
                     : 'text-muted-foreground hover:text-foreground',
                 )}>
-                {t.label}
+                {t(tl.labelKey)}
               </button>
             ))}
           </div>
@@ -121,11 +124,11 @@ export default function Workspace({ initialIntent = 'grow', initialTool = null }
               <Sparkles className={cn('h-4 w-4 shrink-0', smartAffects ? 'text-primary' : 'text-muted-foreground')} />
               {smartAffects ? (
                 <span className="text-foreground">
-                  <b className="text-primary">Smart mode on</b> — recommendations use your soil and climate for a sharper match. Add soil details above.
+                  <b className="text-primary">{t('ws.smart.title')}</b> {t('ws.smart.affectsBody')}
                 </span>
               ) : (
                 <span className="text-muted-foreground">
-                  <b className="text-foreground">Smart mode on.</b> This tool doesn&apos;t use soil data, so results are the same as Simple mode.
+                  <b className="text-foreground">{t('ws.smart.title')}.</b> {t('ws.smart.noopBody')}
                 </span>
               )}
             </div>

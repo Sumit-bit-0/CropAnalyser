@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine, CartesianGrid } from 'recharts'
 import { getForecastAvailable, getPriceTrend, getForecast } from '../api/client'
 import { useWorkspace } from '../workspace/WorkspaceContext'
@@ -13,6 +14,7 @@ const GREEN = '#2E6B43'
 const CLAY = '#B5611F'
 
 export default function Forecast() {
+  const { t } = useTranslation()
   const { state: ctxState } = useWorkspace()
   const [avail, setAvail]         = useState({})   // { state: [commodities] } — only trained models
   const [state, setState]         = useState('')
@@ -60,16 +62,16 @@ export default function Forecast() {
 
   return (
     <div className="max-w-4xl w-full">
-      <PageHeader title="Price Forecast (LSTM)"
-        subtitle={`Historical (last 12 months) plus 6-month LSTM prediction. The dashed line marks where the forecast begins. Only states and crops with a trained model are listed (${states.length} states).`} />
+      <PageHeader title={t('pg.forecast.title')}
+        subtitle={t('pg.forecast.subtitle', { count: states.length })} />
 
       <div className="flex flex-wrap gap-3 mb-4">
         <Select value={state} onValueChange={onStateChange}>
-          <SelectTrigger className="w-48 bg-card"><SelectValue placeholder="State" /></SelectTrigger>
+          <SelectTrigger className="w-48 bg-card"><SelectValue placeholder={t('loc.state')} /></SelectTrigger>
           <SelectContent>{states.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={commodity} onValueChange={setCommodity}>
-          <SelectTrigger className="w-48 bg-card"><SelectValue placeholder="Commodity" /></SelectTrigger>
+          <SelectTrigger className="w-48 bg-card"><SelectValue placeholder={t('pg.profit.commodity')} /></SelectTrigger>
           <SelectContent>{commodities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
         </Select>
       </div>
@@ -86,9 +88,9 @@ export default function Forecast() {
                 <YAxis unit="₹" tick={{ fontSize: 11, fill: AXIS }} stroke={AXIS} />
                 <Tooltip formatter={v => `₹${v}`} />
                 <Legend />
-                {splitPeriod && <ReferenceLine x={splitPeriod} stroke={AXIS} strokeDasharray="4 4" label="Forecast →" />}
-                <Line type="monotone" dataKey="farm_gate_price" stroke={GREEN} name="Farm Gate ₹" dot={false} strokeWidth={2} />
-                <Line type="monotone" dataKey="modal_price" stroke={CLAY} name="Market Price ₹" dot={false} strokeWidth={2} />
+                {splitPeriod && <ReferenceLine x={splitPeriod} stroke={AXIS} strokeDasharray="4 4" label={t('pg.forecast.forecastArrow')} />}
+                <Line type="monotone" dataKey="farm_gate_price" stroke={GREEN} name={t('pg.trend.farmGate')} dot={false} strokeWidth={2} />
+                <Line type="monotone" dataKey="modal_price" stroke={CLAY} name={t('pg.trend.marketPrice')} dot={false} strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>

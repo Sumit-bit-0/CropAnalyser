@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts'
 import { getCropMarkup, getTrendFilters } from '../api/client'
 import { useWorkspace } from '../workspace/WorkspaceContext'
@@ -13,6 +14,7 @@ const GREEN = '#2E6B43'
 const HIGH = '#B3261E'
 
 export default function CropAnalyser() {
+  const { t } = useTranslation()
   const { crop, setCrop } = useWorkspace()
   const selected = crop
   const setSelected = setCrop
@@ -42,12 +44,11 @@ export default function CropAnalyser() {
 
   return (
     <div className="max-w-4xl w-full">
-      <PageHeader title="Crop Markup by State"
-        subtitle="How far farm-gate prices sit below market prices, state by state. The highest markups (worst for farmers) are flagged." />
+      <PageHeader title={t('pg.crops.title')} subtitle={t('pg.crops.subtitle')} />
       {error && <ErrorBanner message={error} />}
       <div className="flex gap-3 mb-4">
         <Select value={selected || ''} onValueChange={setSelected}>
-          <SelectTrigger className="w-48 bg-card"><SelectValue placeholder="Crop" /></SelectTrigger>
+          <SelectTrigger className="w-48 bg-card"><SelectValue placeholder={t('crop.label')} /></SelectTrigger>
           <SelectContent>{crops.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
         </Select>
       </div>

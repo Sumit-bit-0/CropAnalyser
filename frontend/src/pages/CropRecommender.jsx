@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { recommendCrop } from '../api/client'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import { DEFAULT_SOIL } from '../workspace/SoilPanel'
@@ -8,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
 export default function CropRecommender() {
+  const { t } = useTranslation()
   const { mode, soil, setMode } = useWorkspace()
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
@@ -24,30 +26,29 @@ export default function CropRecommender() {
 
   return (
     <div className="max-w-3xl w-full">
-      <PageHeader title="Soil Match"
-        subtitle="Pure soil/climate model: enter your soil values in the Soil details panel (Smart mode) above, then match the best crops." />
+      <PageHeader title={t('pg.soil.title')} subtitle={t('pg.soil.subtitle')} />
       {error && <ErrorBanner message={error} />}
 
       {mode !== 'smart' ? (
         <div className="border border-dashed border-border rounded-lg p-6 text-center text-muted-foreground">
-          Turn on <b>Smart</b> mode (top-right) to enter soil details, then come back here.
+          {t('pg.soil.needSmart')}
           <div className="mt-3">
-            <Button onClick={() => setMode('smart')} size="sm">Switch to Smart</Button>
+            <Button onClick={() => setMode('smart')} size="sm">{t('pg.soil.switchSmart')}</Button>
           </div>
         </div>
       ) : (
         <form onSubmit={submit} className="mb-6">
           <Button size="lg">
-            Match crops {soil ? '' : '(using defaults — fill Soil details for accuracy)'}
+            {soil ? t('pg.soil.match') : t('pg.soil.matchDefaults')}
           </Button>
         </form>
       )}
 
       {result && (
         <div>
-          <p className="text-lg mb-3">Best pick for your soil:{' '}
+          <p className="text-lg mb-3">{t('pg.soil.bestPick')}{' '}
             <span className="font-bold text-primary capitalize">{result.top.crop}</span>{' '}
-            ({result.top.confidence_pct}% match)</p>
+            ({t('pg.soil.matchPct', { pct: result.top.confidence_pct })})</p>
           <div className="space-y-2">
             {result.recommendations.map((r, i) => (
               <Card key={r.crop} className={i === 0 ? 'border-primary bg-secondary' : ''}>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { planProfit, getPriceReference, getTrendFilters } from '../api/client'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import ErrorBanner from '../components/ErrorBanner'
@@ -11,11 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const RISK_COLOR = { low: 'bg-primary/15 text-primary', medium: 'bg-accent/15 text-accent',
                      high: 'bg-destructive/15 text-destructive', unknown: 'bg-muted text-muted-foreground' }
 const NUM = ['area_acres', 'yield_q_per_acre', 'input_cost', 'labour_cost', 'transport_cost', 'market_price']
-const LABELS = { area_acres: 'Area (acres)', yield_q_per_acre: 'Yield (quintal/acre)',
-  input_cost: 'Input cost (₹)', labour_cost: 'Labour cost (₹)', transport_cost: 'Transport cost (₹)',
-  market_price: 'Market price (₹/quintal)' }
+const FIELD_KEYS = { area_acres: 'pg.profit.fieldArea', yield_q_per_acre: 'pg.profit.fieldYield',
+  input_cost: 'pg.profit.fieldInput', labour_cost: 'pg.profit.fieldLabour', transport_cost: 'pg.profit.fieldTransport',
+  market_price: 'pg.profit.fieldMarketPrice' }
 
 export default function ProfitPlanner() {
+  const { t } = useTranslation()
   const { state, crop, setCrop } = useWorkspace()
   const [filters, setFilters] = useState({ states: [], commodities: [] })
   const commodity = crop
@@ -48,17 +50,17 @@ export default function ProfitPlanner() {
 
   return (
     <div className="max-w-3xl w-full">
-      <PageHeader title="Profit Planner" subtitle="Estimate profit, break-even price, and selling risk for your crop." />
+      <PageHeader title={t('pg.profit.title')} subtitle={t('pg.profit.subtitle')} />
       {error && <ErrorBanner message={error} />}
 
       <div className="flex flex-wrap gap-2 items-end mb-4">
-        <label className="text-sm text-foreground">Commodity
+        <label className="text-sm text-foreground">{t('pg.profit.commodity')}
           <Select value={commodity || ''} onValueChange={setCommodity}>
             <SelectTrigger className="mt-1 w-48"><SelectValue placeholder="—" /></SelectTrigger>
             <SelectContent>{filters.commodities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
           </Select>
         </label>
-        <Button type="button" variant="outline" size="sm" onClick={loadPrice}>Use market price</Button>
+        <Button type="button" variant="outline" size="sm" onClick={loadPrice}>{t('pg.profit.useMarketPrice')}</Button>
         {ref && (
           <span className={`text-xs px-2 py-1 rounded ${RISK_COLOR[ref.risk_level]}`}>
             Price risk: {ref.risk_level}{ref.latest_price ? ` (latest ₹${ref.latest_price}/q)` : ''}
@@ -68,24 +70,24 @@ export default function ProfitPlanner() {
 
       <form onSubmit={submit} className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
         {NUM.map((k) => (
-          <label key={k} className="text-sm text-foreground">{LABELS[k]}
+          <label key={k} className="text-sm text-foreground">{t(FIELD_KEYS[k])}
             <Input type="number" step="any" value={form[k]}
               onChange={(e) => setForm({ ...form, [k]: e.target.value })} className="mt-1 w-full" /></label>
         ))}
-        <Button className="col-span-2 md:col-span-3" size="lg">Calculate</Button>
+        <Button className="col-span-2 md:col-span-3" size="lg">{t('pg.profit.calculate')}</Button>
       </form>
 
       {result && (
         <Card>
           <CardContent className="p-4 space-y-2">
             <p className={`text-2xl font-bold ${result.profit >= 0 ? 'text-primary' : 'text-destructive'}`}>
-              {result.profit >= 0 ? 'Profit' : 'Loss'}: ₹{Math.abs(result.profit).toLocaleString('en-IN')}
+              {result.profit >= 0 ? t('pg.profit.profit') : t('pg.profit.loss')}: ₹{Math.abs(result.profit).toLocaleString('en-IN')}
             </p>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <span>Revenue: ₹{result.total_revenue.toLocaleString('en-IN')}</span>
-              <span>Total cost: ₹{result.total_cost.toLocaleString('en-IN')}</span>
-              <span>Break-even price: {result.break_even_price ? `₹${result.break_even_price}/q` : '—'}</span>
-              <span>Target sale price: {result.target_sale_price ? `₹${result.target_sale_price}/q` : '—'}</span>
+              <span>{t('pg.profit.revenue')}: ₹{result.total_revenue.toLocaleString('en-IN')}</span>
+              <span>{t('pg.profit.totalCost')}: ₹{result.total_cost.toLocaleString('en-IN')}</span>
+              <span>{t('pg.profit.breakEven')}: {result.break_even_price ? `₹${result.break_even_price}/q` : '—'}</span>
+              <span>{t('pg.profit.targetPrice')}: {result.target_sale_price ? `₹${result.target_sale_price}/q` : '—'}</span>
             </div>
             <p className="text-foreground bg-muted rounded p-2">{result.recommendation}</p>
           </CardContent>

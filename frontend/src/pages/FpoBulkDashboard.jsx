@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { fpoBulkPlan } from '../api/client'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import ErrorBanner from '../components/ErrorBanner'
@@ -14,6 +15,7 @@ const DEFAULT_TRANSPORT = {
 }
 
 export default function FpoBulkDashboard() {
+  const { t } = useTranslation()
   const { crop, state, lat, lon } = useWorkspace()
   const firstRow = { lat: lat ?? '', lon: lon ?? '', state: state || '', quantity_q: '' }
   const [rows, setRows] = useState([firstRow])
@@ -41,7 +43,7 @@ export default function FpoBulkDashboard() {
     setError(null)
     const invalid = rows.some((r) => r.lat === '' || r.lon === '' || !(Number(r.quantity_q) > 0))
     if (invalid) {
-      setError('Each farmer row needs latitude, longitude, and a positive quantity.')
+      setError(t('pg.fpo.invalidRows'))
       setResult(null)
       return
     }
@@ -66,17 +68,16 @@ export default function FpoBulkDashboard() {
 
   return (
     <div className="max-w-4xl w-full">
-      <PageHeader title="FPO Bulk Selling"
-        subtitle="Pool members' harvest and see if trucking it together beats selling alone." />
+      <PageHeader title={t('pg.fpo.title')} subtitle={t('pg.fpo.subtitle')} />
       {error && <ErrorBanner message={error} />}
-      {!crop && <p className="text-muted-foreground mb-3">Pick a crop above first.</p>}
+      {!crop && <p className="text-muted-foreground mb-3">{t('pg.fpo.pickCrop')}</p>}
 
       <div className="overflow-x-auto">
         <Table className="mb-3">
           <TableHeader>
             <TableRow>
-              <TableHead>Lat</TableHead><TableHead>Lon</TableHead>
-              <TableHead>State</TableHead><TableHead>Quantity (q)</TableHead><TableHead></TableHead>
+              <TableHead>{t('pg.fpo.lat')}</TableHead><TableHead>{t('pg.fpo.lon')}</TableHead>
+              <TableHead>{t('loc.state')}</TableHead><TableHead>{t('pg.fpo.quantityQ')}</TableHead><TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -93,7 +94,7 @@ export default function FpoBulkDashboard() {
           </TableBody>
         </Table>
       </div>
-      <Button variant="link" size="sm" className="px-0 mb-4" onClick={addRow}>+ Add farmer</Button>
+      <Button variant="link" size="sm" className="px-0 mb-4" onClick={addRow}>{t('pg.fpo.addFarmer')}</Button>
 
       <div className="flex gap-3 flex-wrap mb-4 text-sm">
         {Object.keys(DEFAULT_TRANSPORT).map((k) => (
@@ -103,7 +104,7 @@ export default function FpoBulkDashboard() {
         ))}
       </div>
 
-      <Button onClick={submit} disabled={!crop}>Compute plan</Button>
+      <Button onClick={submit} disabled={!crop}>{t('pg.fpo.computePlan')}</Button>
 
       {result && (
         <div className="mt-5">
@@ -119,23 +120,23 @@ export default function FpoBulkDashboard() {
                 )}
                 <p className="text-lg mb-1">{result.message}</p>
                 <ul className="text-sm text-foreground space-y-1 mt-2">
-                  <li>Selling individually: <b>₹{result.baseline}</b></li>
+                  <li>{t('pg.fpo.sellingIndividually')}: <b>₹{result.baseline}</b></li>
                   <li>Pooled &amp; trucked{result.chosen_mandi ? ` to ${result.chosen_mandi.market}` : ''}: <b>₹{result.aggregated_rev}</b>
                     {result.chosen_mandi ? ` (${result.chosen_mandi.trucks} truck(s), ₹${result.chosen_mandi.transport_cost} transport)` : ''}</li>
                   <li className={result.extra_income > 0 ? 'text-primary font-semibold' : 'text-muted-foreground'}>
-                    Extra income from pooling: ₹{result.extra_income}</li>
+                    {t('pg.fpo.extraIncome')}: ₹{result.extra_income}</li>
                 </ul>
                 <p className="text-xs text-muted-foreground mt-3">
                   Assumes the harvest is aggregated at a central collection point (the members' geographic centre); v1 does not plan multi-stop pickup routes.
                 </p>
                 {result.per_farmer?.length > 0 && (
                   <div className="overflow-x-auto mt-4">
-                    <p className="text-sm font-medium text-foreground mb-1">If each member sold on their own:</p>
+                    <p className="text-sm font-medium text-foreground mb-1">{t('pg.fpo.ifSoldAlone')}</p>
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Member (lat, lon)</TableHead><TableHead>Qty (q)</TableHead>
-                          <TableHead>Best market</TableHead><TableHead>Revenue ₹</TableHead>
+                          <TableHead>{t('pg.fpo.thMember')}</TableHead><TableHead>{t('pg.fpo.thQty')}</TableHead>
+                          <TableHead>{t('pg.fpo.thBestMarket')}</TableHead><TableHead>{t('pg.fpo.thRevenue')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>

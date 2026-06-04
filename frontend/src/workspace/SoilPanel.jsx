@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useWorkspace } from './WorkspaceContext'
 
 const SOIL_FIELDS = [
@@ -9,12 +10,13 @@ const SOIL_FIELDS = [
 const DEFAULT_SOIL = Object.fromEntries(SOIL_FIELDS.map(([k, , v]) => [k, v]))
 
 export default function SoilPanel() {
+  const { t } = useTranslation()
   const { soil, setSoil } = useWorkspace()
   const s = soil || DEFAULT_SOIL
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
-      {SOIL_FIELDS.map(([k, label]) => (
-        <label key={k} className="text-sm text-foreground">{label}
+      {SOIL_FIELDS.map(([k]) => (
+        <label key={k} className="text-sm text-foreground">{t(`soil.${k}`)}
           <input type="number" step="any" value={s[k]}
             onChange={(e) => setSoil({ ...s, [k]: Number(e.target.value) })}
             className="mt-1 w-full border border-border rounded px-2 py-2" />
