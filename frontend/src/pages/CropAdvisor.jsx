@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { recommendSmart } from '../api/client'
+import { useCropName } from '../i18n/cropName'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import ErrorBanner from '../components/ErrorBanner'
 import PageHeader from '@/components/PageHeader'
@@ -18,6 +19,7 @@ const trendColor = (x) => (x === 'rising' ? 'text-primary' : x === 'falling' ? '
 
 export default function CropAdvisor() {
   const { t } = useTranslation()
+  const cropName = useCropName()
   const { state, district, season, lat, lon, mode, soil, setCrop } = useWorkspace()
   const [goal, setGoal] = useState('')
   const [result, setResult] = useState(null)
@@ -91,13 +93,13 @@ export default function CropAdvisor() {
                     <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-sm font-bold">
                       {i + 1}
                     </span>
-                    <span className="font-bold capitalize text-foreground text-lg">{r.crop}</span>
+                    <span className="font-bold capitalize text-foreground text-lg">{cropName(r.crop)}</span>
                     {i === 0 && <Badge>{t('pg.advisor.bestPick')}</Badge>}
                     <span className="ml-auto text-xs text-muted-foreground">{t('pg.advisor.match', { score: r.score })}</span>
                   </div>
                   <Button type="button" variant="link" size="sm" className="px-0 h-auto mb-2"
                     onClick={() => setCrop(r.crop)}>
-                    {t('pg.advisor.seePrices', { crop: r.crop })} →
+                    {t('pg.advisor.seePrices', { crop: cropName(r.crop) })} →
                   </Button>
                   {r.traditional?.years_grown > 0 && (
                     <p className="text-sm text-primary font-medium mb-1">

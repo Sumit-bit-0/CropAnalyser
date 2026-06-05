@@ -19,3 +19,7 @@ node_modules
 
 # v0 raw import dump (Next.js scaffold — reference only, ported into frontend/)
 frontendv0/
+
+# crop-name i18n generator artifacts (regenerable via tools/gen_crop_names.py)
+backend/tools/out/
+backend/tools/crop_wikidata_cache.json

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine, CartesianGrid } from 'recharts'
 import { getForecastAvailable, getPriceTrend, getForecast } from '../api/client'
+import { useCropName } from '../i18n/cropName'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorBanner from '../components/ErrorBanner'
@@ -15,6 +16,7 @@ const CLAY = '#B5611F'
 
 export default function Forecast() {
   const { t } = useTranslation()
+  const cropName = useCropName()
   const { state: ctxState } = useWorkspace()
   const [avail, setAvail]         = useState({})   // { state: [commodities] } — only trained models
   const [state, setState]         = useState('')
@@ -72,7 +74,7 @@ export default function Forecast() {
         </Select>
         <Select value={commodity} onValueChange={setCommodity}>
           <SelectTrigger className="w-48 bg-card"><SelectValue placeholder={t('pg.profit.commodity')} /></SelectTrigger>
-          <SelectContent>{commodities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+          <SelectContent>{commodities.map(c => <SelectItem key={c} value={c}>{cropName(c)}</SelectItem>)}</SelectContent>
         </Select>
       </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { getTrendFilters, getPriceTrend } from '../api/client'
+import { useCropName } from '../i18n/cropName'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorBanner from '../components/ErrorBanner'
@@ -15,6 +16,7 @@ const CLAY = '#B5611F'
 
 export default function PriceTrend() {
   const { t } = useTranslation()
+  const cropName = useCropName()
   const { state, crop, setCrop } = useWorkspace()
   const [filters, setFilters]     = useState({ states: [], commodities: [] })
   const commodity = crop
@@ -49,7 +51,7 @@ export default function PriceTrend() {
       <div className="flex gap-3 mb-4">
         <Select value={commodity || ''} onValueChange={setCommodity}>
           <SelectTrigger className="w-48 bg-card"><SelectValue placeholder={t('pg.profit.commodity')} /></SelectTrigger>
-          <SelectContent>{filters.commodities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+          <SelectContent>{filters.commodities.map(c => <SelectItem key={c} value={c}>{cropName(c)}</SelectItem>)}</SelectContent>
         </Select>
       </div>
       {loading ? <LoadingSpinner /> : (

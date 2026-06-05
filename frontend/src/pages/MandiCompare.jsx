@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { compareMandis } from '../api/client'
+import { useCropName } from '../i18n/cropName'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import ErrorBanner from '../components/ErrorBanner'
 import PageHeader from '@/components/PageHeader'
@@ -10,6 +11,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 
 export default function MandiCompare() {
   const { t } = useTranslation()
+  const cropName = useCropName()
   const { crop, state, lat, lon, area, district } = useWorkspace()
   const coords = lat != null && lon != null ? { lat, lon } : null
   const [rate, setRate] = useState(2)
@@ -47,7 +49,7 @@ export default function MandiCompare() {
       {result?.source === 'state_fallback' && (
         <Card className="border-accent/40 bg-accent/10 mb-3">
           <CardContent className="p-4">
-            <p className="text-lg">State-level estimate for <b className="capitalize">{result.crop}</b> in {result.state}:{' '}
+            <p className="text-lg">State-level estimate for <b className="capitalize">{cropName(result.crop)}</b> in {result.state}:{' '}
               <span className="font-bold text-primary">₹{result.state_avg}/q</span></p>
             <p className="text-xs text-accent mt-1">{t('pg.mandi.noLiveData')}</p>
           </CardContent>

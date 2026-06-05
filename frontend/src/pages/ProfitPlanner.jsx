@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { planProfit, getPriceReference, getTrendFilters } from '../api/client'
+import { useCropName } from '../i18n/cropName'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 import ErrorBanner from '../components/ErrorBanner'
 import PageHeader from '@/components/PageHeader'
@@ -18,6 +19,7 @@ const FIELD_KEYS = { area_acres: 'pg.profit.fieldArea', yield_q_per_acre: 'pg.pr
 
 export default function ProfitPlanner() {
   const { t } = useTranslation()
+  const cropName = useCropName()
   const { state, crop, setCrop } = useWorkspace()
   const [filters, setFilters] = useState({ states: [], commodities: [] })
   const commodity = crop
@@ -57,7 +59,7 @@ export default function ProfitPlanner() {
         <label className="text-sm text-foreground">{t('pg.profit.commodity')}
           <Select value={commodity || ''} onValueChange={setCommodity}>
             <SelectTrigger className="mt-1 w-48"><SelectValue placeholder="—" /></SelectTrigger>
-            <SelectContent>{filters.commodities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+            <SelectContent>{filters.commodities.map((c) => <SelectItem key={c} value={c}>{cropName(c)}</SelectItem>)}</SelectContent>
           </Select>
         </label>
         <Button type="button" variant="outline" size="sm" onClick={loadPrice}>{t('pg.profit.useMarketPrice')}</Button>
