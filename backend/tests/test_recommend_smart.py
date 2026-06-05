@@ -24,13 +24,17 @@ def test_smart_mode_with_soil():
     assert rec["crop"] != "coffee"
 
 
-def test_simple_mode_without_soil():
+def test_soil_auto_derived_without_explicit_block():
+    # No `soil` block posted: the API auto-derives soil from the district table,
+    # so suitability is included (Ludhiana has seed soil data). There is no
+    # longer a "simple mode" default — soil is always derived when data exists.
     r = client.post("/api/recommend/smart", json={
         "state": "Punjab", "district": "Ludhiana", "top_k": 3,
     })
     assert r.status_code == 200
     body = r.json()
-    assert body["modules_used"] == ["market", "regional"]
+    assert body["modules_used"] == ["market", "regional", "suitability"]
+    assert body["soil_source"] == "district"
     assert len(body["recommendations"]) == 3
 
 
