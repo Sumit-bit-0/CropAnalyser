@@ -33,6 +33,7 @@ from analysis.market_profitability import market_profitability_scores
 from analysis.yield_predict import predict_yield
 from analysis.price_outlook import price_outlook
 from analysis.weather_fit import weather_fit_scores
+from analysis.demand_gate import GATED_CROPS, nearest_facility, proximity_factor
 
 # Default weights over the three implemented modules (sum to 1.0), used in Smart
 # Mode when soil/climate is supplied.
@@ -165,6 +166,23 @@ def recommend(state: str, district: str | None = None, season: str | None = None
         scored.append((c, score, avail))
     scored.sort(key=lambda t: t[1], reverse=True)
 
+    # Processing-demand gate: scale gated crops by proximity to a required
+    # facility, then re-sort. No coords -> no-op. Notes feed the caution layer.
+    gate_km = {}
+    if coords and coords[0] is not None and coords[1] is not None:
+        gated = []
+        for c, score, breakdown in scored:
+            if c in GATED_CROPS:
+                fac = nearest_facility(GATED_CROPS[c], coords[0], coords[1])
+                km = fac["km"] if fac else None
+                factor = proximity_factor(km)
+                score = round(score * factor, 4)
+                if factor < 1.0:
+                    gate_km[c] = km
+            gated.append((c, score, breakdown))
+        gated.sort(key=lambda t: t[1], reverse=True)
+        scored = gated
+
     recommendations = [_enrich({
         "crop": c,
         "score": score,
@@ -172,6 +190,14 @@ def recommend(state: str, district: str | None = None, season: str | None = None
         "why": _why(c, modules),
         "cautions": _cautions(c, modules),
     }, modules, state, district, season) for c, score, breakdown in scored[:top_k]]
+
+    for rec in recommendations:
+        if rec["crop"] in gate_km:
+            km = gate_km[rec["crop"]]
+            where = f"the nearest sugar mill is {km} km away" if km is not None \
+                else "no sugar mill is on record nearby"
+            rec["cautions"].append(
+                f"{where} — sugarcane is a processing crop and hard to sell far from a mill")
 
     return {
         "modules_used": sorted(w.keys()),
