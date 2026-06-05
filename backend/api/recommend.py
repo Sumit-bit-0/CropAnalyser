@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from analysis.crop_recommender import recommend_crops
 from analysis.fusion import recommend as fusion_recommend
+from analysis.soil_profile import soil_profile
 
 router = APIRouter()
 
@@ -41,14 +42,27 @@ class SmartRecommendInput(BaseModel):
 
 @router.post("/recommend/smart")
 def recommend_smart(body: SmartRecommendInput):
-    """CropAdvisor fusion recommender. With `soil` -> Smart Mode (all modules);
-    without it -> Simple Mode (regional + market, graceful degradation)."""
-    features = body.soil.model_dump() if body.soil else None
+    """CropAdvisor fusion recommender. Soil/climate is auto-derived from the
+    location; a posted `soil` block overrides it (the optional manual panel)."""
     coords = (body.lat, body.lon) if body.lat is not None and body.lon is not None else None
+    soil_source = climate_source = None
+    if body.soil is not None:
+        features = body.soil.model_dump()
+        soil_source = "manual"
+    else:
+        prof = soil_profile(body.state, body.district, coords=coords, season=body.season)
+        if prof:
+            features = prof["features"]
+            soil_source, climate_source = prof["soil_source"], prof["climate_source"]
+        else:
+            features = None  # no soil data anywhere -> degrade to regional+market
     try:
-        return fusion_recommend(
+        result = fusion_recommend(
             state=body.state, district=body.district, season=body.season,
             features=features, goal=body.goal, top_k=body.top_k, coords=coords,
         )
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
+    result["soil_source"] = soil_source
+    result["climate_source"] = climate_source
+    return result
