@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.features": "ವೈಶಿಷ್ಟ್ಯಗಳು",
   "nav.about": "ಪರಿಚಯ",
   "hero.title": "ಏನು ಬೆಳೆಯಬೇಕು ತಿಳಿಯಿರಿ. ಎಲ್ಲಿ ಮಾರಬೇಕು ತಿಳಿಯಿರಿ.",
@@ -35,6 +35,12 @@
   "season.Whole Year": "ವರ್ಷಪೂರ್ತಿ",
 
   "cb.soilDetails": "ಮಣ್ಣಿನ ವಿವರ",
+  "cb.soilOptional": "Add your soil test (optional)",
+  "soilSource.district": "Soil: your district average",
+  "soilSource.state": "Soil: state average",
+  "soilSource.national": "Soil: national average",
+  "soilSource.manual": "Soil: your values",
+  "soilSource.none": "Soil: not available",
 
   "ws.intent.grow": "ಏನು ಬೆಳೆಯಬೇಕು",
   "ws.intent.sell": "ಎಲ್ಲಿ ಮತ್ತು ಯಾವಾಗ ಮಾರಬೇಕು",

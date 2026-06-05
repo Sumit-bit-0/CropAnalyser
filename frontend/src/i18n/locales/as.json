@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.features": "বৈশিষ্ট্যসমূহ",
   "nav.about": "পৰিচয়",
   "hero.title": "কি খেতি কৰিব জানক। ক'ত বিক্ৰী কৰিব জানক।",
@@ -35,6 +35,12 @@
   "season.Whole Year": "গোটেই বছৰ",
 
   "cb.soilDetails": "মাটিৰ বিৱৰণ",
+  "cb.soilOptional": "Add your soil test (optional)",
+  "soilSource.district": "Soil: your district average",
+  "soilSource.state": "Soil: state average",
+  "soilSource.national": "Soil: national average",
+  "soilSource.manual": "Soil: your values",
+  "soilSource.none": "Soil: not available",
 
   "ws.intent.grow": "কি খেতি কৰিব",
   "ws.intent.sell": "ক'ত আৰু কেতিয়া বিক্ৰী কৰিব",

@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.features": "Features",
   "nav.about": "About",
   "hero.title": "Know what to grow. Know where to sell.",
@@ -35,6 +35,12 @@
   "season.Whole Year": "Whole Year",
 
   "cb.soilDetails": "Soil details",
+  "cb.soilOptional": "Add your soil test (optional)",
+  "soilSource.district": "Soil: your district average",
+  "soilSource.state": "Soil: state average",
+  "soilSource.national": "Soil: national average",
+  "soilSource.manual": "Soil: your values",
+  "soilSource.none": "Soil: not available",
 
   "ws.intent.grow": "What to grow",
   "ws.intent.sell": "Where & when to sell",

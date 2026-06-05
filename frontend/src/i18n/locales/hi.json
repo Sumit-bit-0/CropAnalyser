@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.features": "विशेषताएँ",
   "nav.about": "परिचय",
   "hero.title": "जानें क्या उगाएँ। जानें कहाँ बेचें।",
@@ -35,6 +35,12 @@
   "season.Whole Year": "पूरे साल",
 
   "cb.soilDetails": "मिट्टी का विवरण",
+  "cb.soilOptional": "Add your soil test (optional)",
+  "soilSource.district": "Soil: your district average",
+  "soilSource.state": "Soil: state average",
+  "soilSource.national": "Soil: national average",
+  "soilSource.manual": "Soil: your values",
+  "soilSource.none": "Soil: not available",
 
   "ws.intent.grow": "क्या उगाएँ",
   "ws.intent.sell": "कहाँ और कब बेचें",

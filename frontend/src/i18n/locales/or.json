@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.features": "ବୈଶିଷ୍ଟ୍ୟ",
   "nav.about": "ପରିଚୟ",
   "hero.title": "କଣ ଚାଷ କରିବେ ଜାଣନ୍ତୁ। କେଉଁଠି ବିକ୍ରି କରିବେ ଜାଣନ୍ତୁ।",
@@ -35,6 +35,12 @@
   "season.Whole Year": "ବର୍ଷସାରା",
 
   "cb.soilDetails": "ମାଟି ବିବରଣୀ",
+  "cb.soilOptional": "Add your soil test (optional)",
+  "soilSource.district": "Soil: your district average",
+  "soilSource.state": "Soil: state average",
+  "soilSource.national": "Soil: national average",
+  "soilSource.manual": "Soil: your values",
+  "soilSource.none": "Soil: not available",
 
   "ws.intent.grow": "କଣ ଚାଷ କରିବେ",
   "ws.intent.sell": "କେଉଁଠି ଓ କେବେ ବିକ୍ରି କରିବେ",

@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.features": "वैशिष्ट्ये",
   "nav.about": "परिचय",
   "hero.title": "काय पिकवायचे ते जाणा. कुठे विकायचे ते जाणा.",
@@ -35,6 +35,12 @@
   "season.Whole Year": "वर्षभर",
 
   "cb.soilDetails": "मातीचा तपशील",
+  "cb.soilOptional": "Add your soil test (optional)",
+  "soilSource.district": "Soil: your district average",
+  "soilSource.state": "Soil: state average",
+  "soilSource.national": "Soil: national average",
+  "soilSource.manual": "Soil: your values",
+  "soilSource.none": "Soil: not available",
 
   "ws.intent.grow": "काय पिकवायचे",
   "ws.intent.sell": "कुठे आणि केव्हा विकायचे",

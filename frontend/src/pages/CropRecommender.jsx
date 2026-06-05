@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 export default function CropRecommender() {
   const { t } = useTranslation()
   const cropName = useCropName()
-  const { mode, soil, setMode } = useWorkspace()
+  const { soil } = useWorkspace()
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
 
@@ -31,20 +31,11 @@ export default function CropRecommender() {
       <PageHeader title={t('pg.soil.title')} subtitle={t('pg.soil.subtitle')} />
       {error && <ErrorBanner message={error} />}
 
-      {mode !== 'smart' ? (
-        <div className="border border-dashed border-border rounded-lg p-6 text-center text-muted-foreground">
-          {t('pg.soil.needSmart')}
-          <div className="mt-3">
-            <Button onClick={() => setMode('smart')} size="sm">{t('pg.soil.switchSmart')}</Button>
-          </div>
-        </div>
-      ) : (
-        <form onSubmit={submit} className="mb-6">
-          <Button size="lg">
-            {soil ? t('pg.soil.match') : t('pg.soil.matchDefaults')}
-          </Button>
-        </form>
-      )}
+      <form onSubmit={submit} className="mb-6">
+        <Button size="lg">
+          {soil ? t('pg.soil.match') : t('pg.soil.matchDefaults')}
+        </Button>
+      </form>
 
       {result && (
         <div>

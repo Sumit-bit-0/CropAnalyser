@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.features": "বৈশিষ্ট্য",
   "nav.about": "পরিচিতি",
   "hero.title": "জানুন কী চাষ করবেন। জানুন কোথায় বিক্রি করবেন।",
@@ -35,6 +35,12 @@
   "season.Whole Year": "সারা বছর",
 
   "cb.soilDetails": "মাটির বিবরণ",
+  "cb.soilOptional": "Add your soil test (optional)",
+  "soilSource.district": "Soil: your district average",
+  "soilSource.state": "Soil: state average",
+  "soilSource.national": "Soil: national average",
+  "soilSource.manual": "Soil: your values",
+  "soilSource.none": "Soil: not available",
 
   "ws.intent.grow": "কী চাষ করবেন",
   "ws.intent.sell": "কোথায় ও কখন বিক্রি করবেন",

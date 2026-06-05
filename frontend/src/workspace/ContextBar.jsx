@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useWorkspace } from './WorkspaceContext'
 import LocationPicker from './LocationPicker'
@@ -12,10 +12,8 @@ const SEASONS = ['Any', 'Kharif', 'Rabi', 'Summer', 'Winter', 'Autumn', 'Whole Y
 
 export default function ContextBar({ states }) {
   const { t } = useTranslation()
-  const { season, setSeason, mode } = useWorkspace()
+  const { season, setSeason } = useWorkspace()
   const [showSoil, setShowSoil] = useState(false)
-  // Reveal the soil panel automatically when Smart mode turns on.
-  useEffect(() => { if (mode === 'smart') setShowSoil(true) }, [mode])
   return (
     <div className="sticky top-0 z-20 bg-secondary border-b border-border">
       <div className="mx-auto max-w-[1100px] px-6 py-3">
@@ -32,14 +30,12 @@ export default function ContextBar({ states }) {
               </SelectContent>
             </Select>
           </label>
-          {mode === 'smart' && (
-            <button type="button" onClick={() => setShowSoil((v) => !v)}
-              className="text-sm text-primary hover:text-primary/80 pb-2">
-              {showSoil ? '▾' : '▸'} {t('cb.soilDetails')}
-            </button>
-          )}
+          <button type="button" onClick={() => setShowSoil((v) => !v)}
+            className="text-sm text-primary hover:text-primary/80 pb-2">
+            {showSoil ? '▾' : '▸'} {t('cb.soilOptional')}
+          </button>
         </div>
-        {mode === 'smart' && showSoil && <SoilPanel />}
+        {showSoil && <SoilPanel />}
       </div>
     </div>
   )

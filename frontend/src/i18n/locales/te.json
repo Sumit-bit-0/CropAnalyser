@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.features": "విశేషతలు",
   "nav.about": "పరిచయం",
   "hero.title": "ఏమి పండించాలో తెలుసుకోండి. ఎక్కడ అమ్మాలో తెలుసుకోండి.",
@@ -35,6 +35,12 @@
   "season.Whole Year": "ఏడాది పొడవునా",
 
   "cb.soilDetails": "నేల వివరాలు",
+  "cb.soilOptional": "Add your soil test (optional)",
+  "soilSource.district": "Soil: your district average",
+  "soilSource.state": "Soil: state average",
+  "soilSource.national": "Soil: national average",
+  "soilSource.manual": "Soil: your values",
+  "soilSource.none": "Soil: not available",
 
   "ws.intent.grow": "ఏమి పండించాలి",
   "ws.intent.sell": "ఎక్కడ, ఎప్పుడు అమ్మాలి",

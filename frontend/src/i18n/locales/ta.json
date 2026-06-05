@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.features": "அம்சங்கள்",
   "nav.about": "அறிமுகம்",
   "hero.title": "எதை விளைவிக்க வேண்டும் என்று அறியுங்கள். எங்கே விற்க வேண்டும் என்று அறியுங்கள்.",
@@ -35,6 +35,12 @@
   "season.Whole Year": "ஆண்டு முழுவதும்",
 
   "cb.soilDetails": "மண் விவரங்கள்",
+  "cb.soilOptional": "Add your soil test (optional)",
+  "soilSource.district": "Soil: your district average",
+  "soilSource.state": "Soil: state average",
+  "soilSource.national": "Soil: national average",
+  "soilSource.manual": "Soil: your values",
+  "soilSource.none": "Soil: not available",
 
   "ws.intent.grow": "எதை விளைவிக்க",
   "ws.intent.sell": "எங்கே, எப்போது விற்க",

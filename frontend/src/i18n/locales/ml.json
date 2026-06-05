@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.features": "സവിശേഷതകൾ",
   "nav.about": "പരിചയം",
   "hero.title": "എന്ത് വളർത്തണമെന്ന് അറിയുക. എവിടെ വിൽക്കണമെന്ന് അറിയുക.",
@@ -35,6 +35,12 @@
   "season.Whole Year": "വർഷം മുഴുവൻ",
 
   "cb.soilDetails": "മണ്ണിന്റെ വിശദാംശം",
+  "cb.soilOptional": "Add your soil test (optional)",
+  "soilSource.district": "Soil: your district average",
+  "soilSource.state": "Soil: state average",
+  "soilSource.national": "Soil: national average",
+  "soilSource.manual": "Soil: your values",
+  "soilSource.none": "Soil: not available",
 
   "ws.intent.grow": "എന്ത് വളർത്തണം",
   "ws.intent.sell": "എവിടെ, എപ്പോൾ വിൽക്കണം",

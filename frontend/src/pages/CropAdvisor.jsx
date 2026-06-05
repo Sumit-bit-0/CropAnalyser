@@ -20,7 +20,7 @@ const trendColor = (x) => (x === 'rising' ? 'text-primary' : x === 'falling' ? '
 export default function CropAdvisor() {
   const { t } = useTranslation()
   const cropName = useCropName()
-  const { state, district, season, lat, lon, mode, soil, setCrop } = useWorkspace()
+  const { state, district, season, lat, lon, soil, setCrop } = useWorkspace()
   const [goal, setGoal] = useState('')
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
@@ -35,14 +35,12 @@ export default function CropAdvisor() {
       if (season && season !== 'Any') body.season = season
       if (goal) body.goal = goal
       if (lat != null && lon != null) { body.lat = lat; body.lon = lon }
-      if (mode === 'smart' && soil) body.soil = soil
+      if (soil) body.soil = soil
       setResult(await recommendSmart(body))
     } catch (err) {
       setError(err.response?.data?.detail || 'Recommendation failed'); setResult(null)
     } finally { setLoading(false) }
   }
-
-  const isSmart = result?.modules_used?.includes('suitability')
 
   return (
     <div className="max-w-3xl w-full">
@@ -62,9 +60,6 @@ export default function CropAdvisor() {
           <Button onClick={submit} disabled={loading} size="lg">
             {loading ? t('pg.advisor.analyzing') : t('pg.advisor.recommend')}
           </Button>
-          {mode !== 'smart' && (
-            <span className="text-xs text-muted-foreground">{t('pg.advisor.simpleHint')}</span>
-          )}
         </CardContent>
       </Card>
 
@@ -77,7 +72,7 @@ export default function CropAdvisor() {
       {result && (
         <div>
           <p className="text-xs text-muted-foreground mb-3 flex items-center gap-2 flex-wrap">
-            <Badge variant={isSmart ? 'default' : 'secondary'}>{isSmart ? t('badge.smartMode') : t('badge.simpleMode')}</Badge>
+            <Badge variant="secondary">{t(`soilSource.${result.soil_source || 'none'}`)}</Badge>
             <span>{t('pg.advisor.fusion', { method: result.method })} ·{' '}
             {Object.entries(result.weights_used).map(([m, w]) =>
               `${t(`mod.${m}`)} ${Math.round(w * 100)}%`).join(' · ')}</span>

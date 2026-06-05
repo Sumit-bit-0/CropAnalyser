@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.features": "ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ",
   "nav.about": "ਜਾਣ-ਪਛਾਣ",
   "hero.title": "ਜਾਣੋ ਕੀ ਉਗਾਉਣਾ ਹੈ। ਜਾਣੋ ਕਿੱਥੇ ਵੇਚਣਾ ਹੈ।",
@@ -35,6 +35,12 @@
   "season.Whole Year": "ਸਾਰਾ ਸਾਲ",
 
   "cb.soilDetails": "ਮਿੱਟੀ ਦੇ ਵੇਰਵੇ",
+  "cb.soilOptional": "Add your soil test (optional)",
+  "soilSource.district": "Soil: your district average",
+  "soilSource.state": "Soil: state average",
+  "soilSource.national": "Soil: national average",
+  "soilSource.manual": "Soil: your values",
+  "soilSource.none": "Soil: not available",
 
   "ws.intent.grow": "ਕੀ ਉਗਾਉਣਾ",
   "ws.intent.sell": "ਕਿੱਥੇ ਅਤੇ ਕਦੋਂ ਵੇਚਣਾ",

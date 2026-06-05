@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.features": "વિશેષતાઓ",
   "nav.about": "પરિચય",
   "hero.title": "જાણો શું ઉગાડવું. જાણો ક્યાં વેચવું.",
@@ -35,6 +35,12 @@
   "season.Whole Year": "આખું વર્ષ",
 
   "cb.soilDetails": "માટીની વિગતો",
+  "cb.soilOptional": "Add your soil test (optional)",
+  "soilSource.district": "Soil: your district average",
+  "soilSource.state": "Soil: state average",
+  "soilSource.national": "Soil: national average",
+  "soilSource.manual": "Soil: your values",
+  "soilSource.none": "Soil: not available",
 
   "ws.intent.grow": "શું ઉગાડવું",
   "ws.intent.sell": "ક્યાં અને ક્યારે વેચવું",
