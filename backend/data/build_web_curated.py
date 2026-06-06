@@ -34,6 +34,15 @@ def _clean_name(raw: str) -> str:
     return name.title()
 
 
+def _clean_locality(raw: str) -> str:
+    """Reduce a messy 'City' field to a district-ish token get_centroid can use:
+    drop non-ASCII artifacts, Dist./Taluka/PO markers, digits and punctuation."""
+    s = re.sub(r"[^A-Za-z ]", " ", raw or "")
+    s = re.sub(r"\b(?:dist|distt|district|taluka|tal|post|po|near|via|at)\b",
+               " ", s, flags=re.I)
+    return re.sub(r"\s+", " ", s).strip().title()
+
+
 def parse_cotton_rated_pdf() -> pd.DataFrame:
     """Textiles-Committee star-rated ginning & pressing factories PDF.
 
@@ -69,7 +78,49 @@ def parse_cotton_rated_pdf() -> pd.DataFrame:
     return pd.DataFrame(recs)
 
 
-SOURCES = [parse_cotton_rated_pdf]
+def parse_sea_oil() -> pd.DataFrame:
+    """Solvent Extractors' Assn. of India ordinary-members page (Name/City/State).
+    Major solvent-extraction / oil units nationwide."""
+    tbls = pd.read_html(WEB_DIR / "sea_ordinary.html")
+    df = tbls[0]
+    df.columns = ["title", "name", "city", "state"]
+    df = df[df["name"].astype(str).str.upper() != "NAME"]
+    recs = []
+    for r in df.itertuples(index=False):
+        name = _clean_name(str(r.name))
+        state = str(r.state).strip()
+        if not name or name.lower() == "nan" or state.lower() == "nan":
+            continue
+        recs.append({"facility_type": "oil_mill", "name": name,
+                     "state": state.title(), "district": _clean_locality(str(r.city)),
+                     "pin": "", "crop": "mustard"})
+    return pd.DataFrame(recs)
+
+
+def parse_aorma_rice() -> pd.DataFrame:
+    """All Odisha Rice Millers' Assn. list (Name & Address / District). Odisha."""
+    import pdfplumber
+    recs = []
+    with pdfplumber.open(WEB_DIR / "rice_odisha_aorma.pdf") as pdf:
+        for pg in pdf.pages:
+            for tbl in pg.extract_tables():
+                for row in tbl:
+                    sl = (row[0] or "").strip()
+                    if not sl.isdigit() or len(row) < 3:
+                        continue
+                    addr = (row[1] or "").replace("\n", " ")
+                    pins = re.findall(r"\b(\d{6})\b", addr)
+                    recs.append({
+                        "facility_type": "rice_mill",
+                        "name": _clean_name(addr.split(",")[0]),
+                        "state": "Odisha",
+                        "district": (row[2] or "").strip().title(),
+                        "pin": pins[-1] if pins else "",
+                        "crop": "rice"})
+    return pd.DataFrame(recs)
+
+
+SOURCES = [parse_cotton_rated_pdf, parse_sea_oil, parse_aorma_rice]
 
 
 def _geocode(df: pd.DataFrame) -> pd.DataFrame:
