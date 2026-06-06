@@ -10,13 +10,22 @@ NEAR_KM, FAR_KM, FLOOR = 50.0, 150.0, 0.2
 
 
 def gated_crops() -> dict:
-    """crop -> required facility_type, from facility_crop_map. {} if absent.
+    """crop -> required facility_type, for crops we can actually locate.
 
-    Queried each call (the table is tiny) to avoid stale caching across requests
-    and tests."""
-    if not table_exists("facility_crop_map"):
+    Only crops whose facility_type has at least one facility loaded in
+    processing_units are returned. A taxonomy entry whose facility_type has zero
+    facilities (e.g. flour_mill before any flour mills are ingested) is a data
+    gap, NOT a "no demand" signal, so we must not gate — otherwise the crop would
+    be penalised everywhere just because we haven't sourced its facilities yet.
+
+    Queried each call (the tables are tiny) to avoid stale caching across
+    requests and tests."""
+    if not table_exists("facility_crop_map") or not table_exists("processing_units"):
         return {}
-    df = query("SELECT crop, facility_type FROM facility_crop_map")
+    df = query("""
+        SELECT crop, facility_type FROM facility_crop_map
+        WHERE facility_type IN (SELECT DISTINCT facility_type FROM processing_units)
+    """)
     return dict(zip(df["crop"], df["facility_type"]))
 
 
