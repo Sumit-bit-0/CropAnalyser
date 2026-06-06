@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS data_provenance (
 
 API adapters read `DATA_GOV_API_KEY` from `.env` (never committed). If the key or a resource is unavailable, the adapter fails loudly with a clear message rather than silently loading nothing.
 
-**Target states (first pass, ~8–10):** Uttar Pradesh, Punjab, Maharashtra, Madhya Pradesh, Karnataka, Gujarat, West Bengal, Bihar, Andhra Pradesh, Tamil Nadu. (Adjustable during planning.)
+**Target states (first pass, ~12):** Uttar Pradesh, Punjab, Maharashtra, Madhya Pradesh, Karnataka, Gujarat, West Bengal, Bihar, Andhra Pradesh, Tamil Nadu, **Assam** (largest tea producer), **Kerala** (#2 coffee + tea, spices, coir). Tea/coffee signature coverage: Assam + WB + Tamil Nadu (tea), Karnataka + Kerala + Tamil Nadu (coffee). (Adjustable during planning.)
 
 ## 8. Loader refactor
 
