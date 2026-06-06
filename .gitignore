@@ -23,3 +23,7 @@ frontendv0/
 # crop-name i18n generator artifacts (regenerable via tools/gen_crop_names.py)
 backend/tools/out/
 backend/tools/crop_wikidata_cache.json
+
+# Real-data ingestion: manual downloads / large raw source files (never commit)
+backend/tools/ingest/_staging/*
+!backend/tools/ingest/_staging/.gitkeep
