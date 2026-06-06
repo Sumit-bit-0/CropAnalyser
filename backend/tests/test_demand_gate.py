@@ -38,8 +38,13 @@ def test_gated_crops_returns_dict():
     assert isinstance(result, dict)
 
 
-def test_gated_crops_contains_sugarcane_if_seeded():
-    """If the DB is seeded (as in dev/CI), sugarcane maps to sugar_mill."""
-    result = dg.gated_crops()
-    if result:  # only assert content when table is populated
-        assert result.get("sugarcane") == "sugar_mill"
+def test_gated_crops_only_includes_types_with_facilities():
+    """Guard invariant: a crop is gated only if its facility_type has >=1
+    facility loaded. A taxonomy entry whose facility_type has no facilities is a
+    data gap and must be excluded (otherwise the crop is penalised everywhere)."""
+    from database import query
+    gated = dg.gated_crops()
+    if gated:
+        types = set(query(
+            "SELECT DISTINCT facility_type FROM processing_units")["facility_type"])
+        assert all(ft in types for ft in gated.values())
