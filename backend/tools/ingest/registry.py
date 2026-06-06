@@ -5,6 +5,7 @@ from tools.ingest.adapters.shc_soil import ShcSoil
 from tools.ingest.adapters.datagov_mills import DatagovMills
 from tools.ingest.adapters.mofpi_units import MofpiUnits
 from tools.ingest.adapters.state_signature import StateSignature
+from tools.ingest.adapters.msme_udyam import MsmeUdyam
 
 ADAPTERS = {
     "facility_crop_seed": FacilityCropSeed,
@@ -13,6 +14,7 @@ ADAPTERS = {
     "datagov_mills": DatagovMills,
     "mofpi_units": MofpiUnits,
     "state_signature": StateSignature,
+    "msme_udyam": MsmeUdyam,
 }
 
 
