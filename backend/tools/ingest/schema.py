@@ -27,7 +27,7 @@ _DDL = [
         id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         state     TEXT NOT NULL,
         district  TEXT,
-        N REAL, P REAL, K REAL, ph REAL,
+        "N" REAL, "P" REAL, "K" REAL, ph REAL,
         source    TEXT NOT NULL,
         loaded_at TIMESTAMP NOT NULL DEFAULT now()
     )
