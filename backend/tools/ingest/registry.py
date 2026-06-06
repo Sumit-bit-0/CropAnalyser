@@ -6,6 +6,7 @@ from tools.ingest.adapters.datagov_mills import DatagovMills
 from tools.ingest.adapters.mofpi_units import MofpiUnits
 from tools.ingest.adapters.state_signature import StateSignature
 from tools.ingest.adapters.msme_udyam import MsmeUdyam
+from tools.ingest.adapters.web_curated import WebCurated
 
 ADAPTERS = {
     "facility_crop_seed": FacilityCropSeed,
@@ -15,6 +16,7 @@ ADAPTERS = {
     "mofpi_units": MofpiUnits,
     "state_signature": StateSignature,
     "msme_udyam": MsmeUdyam,
+    "web_curated": WebCurated,
 }
 
 
