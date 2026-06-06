@@ -144,11 +144,13 @@ CREATE INDEX IF NOT EXISTS idx_soil_state ON soil_nutrients(state);
 ### `facility_crop_map`
 ```sql
 CREATE TABLE IF NOT EXISTS facility_crop_map (
-    facility_type TEXT PRIMARY KEY,
-    crop          TEXT NOT NULL     -- canonical WHITELIST crop
+    crop          TEXT PRIMARY KEY, -- canonical WHITELIST crop
+    facility_type TEXT NOT NULL
 );
 ```
-Seeded from a small **committed** CSV (`data/raw/facility_crop_map.csv`) via the `facility_crop_seed` adapter. Replaces the hardcoded `GATED_CROPS` dict in `demand_gate.py`.
+Keyed by **crop** so many crops can share a facility type (e.g. mustard/groundnut/soyabean/sunflower/sesamum → `oil_mill`). This mirrors the existing `GATED_CROPS = {crop: facility_type}` shape it replaces. Seeded from a small **committed** CSV (`data/raw/facility_crop_map.csv`) via the `facility_crop_seed` adapter.
+
+**Crop-catalog constraint:** every `crop` value must be in the `crop_catalog.WHITELIST`. `tea` is **not** in the whitelist (it lacks production-history + market-price source coverage), so tea processing units are **deferred** until `tea` is added to the catalog. Coffee is in the whitelist, so coffee units are in scope.
 
 ### `data_provenance`
 ```sql
