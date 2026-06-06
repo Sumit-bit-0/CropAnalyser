@@ -1,49 +1,48 @@
 # backend/analysis/demand_gate.py
 """Processing-demand gate: a crop that must be processed locally (e.g. sugarcane
--> sugar mill) only ranks high near a facility. Curated coords in
-data/raw/processing_units.csv (facility_type, name, state, district, lat, lon).
-Generic by facility type so Phase 2 industries plug straight in."""
-import csv
-
-from config import DATA_RAW
+-> sugar mill) only ranks high near a facility. Facilities live in the Postgres
+processing_units table; the crop -> facility_type mapping in facility_crop_map.
+Both are loaded by tools/ingest. Generic by facility type."""
+from database import query, table_exists
 from analysis.geo import haversine
 
-PROCESSING_CSV = DATA_RAW / "processing_units.csv"
-GATED_CROPS = {"sugarcane": "sugar_mill"}  # crop -> required facility type
 NEAR_KM, FAR_KM, FLOOR = 50.0, 150.0, 0.2
-_UNITS = None  # cache: list of {facility_type, name, lat, lon}
 
 
-def _load():
-    global _UNITS
-    if _UNITS is not None:
-        return _UNITS
-    out = []
-    if PROCESSING_CSV.exists():
-        with open(PROCESSING_CSV, newline="", encoding="utf-8") as f:
-            for r in csv.DictReader(f):
-                try:
-                    out.append({"facility_type": r["facility_type"].strip(),
-                                "name": r["name"].strip(),
-                                "lat": float(r["lat"]), "lon": float(r["lon"])})
-                except (KeyError, ValueError):
-                    continue
-    _UNITS = out
-    return out
+def gated_crops() -> dict:
+    """crop -> required facility_type, for crops we can actually locate.
+
+    Only crops whose facility_type has at least one facility loaded in
+    processing_units are returned. A taxonomy entry whose facility_type has zero
+    facilities (e.g. flour_mill before any flour mills are ingested) is a data
+    gap, NOT a "no demand" signal, so we must not gate — otherwise the crop would
+    be penalised everywhere just because we haven't sourced its facilities yet.
+
+    Queried each call (the tables are tiny) to avoid stale caching across
+    requests and tests."""
+    if not table_exists("facility_crop_map") or not table_exists("processing_units"):
+        return {}
+    df = query("""
+        SELECT crop, facility_type FROM facility_crop_map
+        WHERE facility_type IN (SELECT DISTINCT facility_type FROM processing_units)
+    """)
+    return dict(zip(df["crop"], df["facility_type"]))
 
 
 def nearest_facility(facility_type: str, lat: float, lon: float):
     """{name, km} of the closest facility of this type, or None."""
+    if not table_exists("processing_units"):
+        return None
+    df = query("SELECT name, lat, lon FROM processing_units "
+               "WHERE facility_type=?", (facility_type,))
     best, best_d = None, float("inf")
-    for u in _load():
-        if u["facility_type"] != facility_type:
-            continue
-        d = haversine(lat, lon, u["lat"], u["lon"])
+    for r in df.itertuples(index=False):
+        d = haversine(lat, lon, float(r.lat), float(r.lon))
         if d < best_d:
-            best_d, best = d, u
+            best_d, best = d, r
     if best is None:
         return None
-    return {"name": best["name"], "km": round(best_d, 1)}
+    return {"name": best.name, "km": round(best_d, 1)}
 
 
 def proximity_factor(km) -> float:

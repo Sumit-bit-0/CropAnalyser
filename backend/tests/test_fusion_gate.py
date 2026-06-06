@@ -10,6 +10,8 @@ def test_gate_penalizes_far_sugarcane(monkeypatch):
     monkeypatch.setattr(fusion, "market_profitability_scores",
         lambda crops: {c: {"score": 1.0, "recent_price": 200, "risk_level": "low"} for c in crops})
     monkeypatch.setattr(fusion, "weather_fit_scores", lambda *a, **k: {})
+    # Gate only sugarcane (not wheat) so the penalty is asymmetric.
+    monkeypatch.setattr(fusion, "gated_crops", lambda: {"sugarcane": "sugar_mill"})
     monkeypatch.setattr(fusion, "nearest_facility", lambda ft, lat, lon: {"name": "x", "km": 300})
 
     out = fusion.recommend("Bihar", crops=["sugarcane", "wheat"], top_k=2,

@@ -1,0 +1,11 @@
+facility_type,name,state,district,lat,lon,crop
+coffee_curing,Chikmagalur Coffee Curing Works,Karnataka,Chikkamagaluru,13.32,75.77,coffee
+coffee_curing,Coorg Coffee Curing,Karnataka,Kodagu,12.42,75.74,coffee
+coffee_curing,Wayanad Coffee Curing,Kerala,Wayanad,11.69,76.13,coffee
+coir_mill,Alappuzha Coir Unit,Kerala,Alappuzha,9.49,76.34,coconut
+coir_mill,Kozhikode Coir Unit,Kerala,Kozhikode,11.25,75.78,coconut
+spice_processing,Kochi Spice Processing,Kerala,Ernakulam,9.98,76.28,turmeric
+jute_mill,Hooghly Jute Mill,West Bengal,Hooghly,22.90,88.39,jute
+jute_mill,Howrah Jute Mill,West Bengal,Howrah,22.59,88.31,jute
+winery,Nashik Winery Cluster,Maharashtra,Nashik,19.99,73.79,grapes
+oil_mill,Rajkot Groundnut Oil Mill,Gujarat,Rajkot,22.30,70.80,groundnut

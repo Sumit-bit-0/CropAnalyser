@@ -24,10 +24,11 @@ def test_smart_mode_with_soil():
     assert rec["crop"] != "coffee"
 
 
-def test_soil_auto_derived_without_explicit_block():
+def test_soil_auto_derived_without_explicit_block(seeded):
     # No `soil` block posted: the API auto-derives soil from the district table,
     # so suitability is included (Ludhiana has seed soil data). There is no
     # longer a "simple mode" default — soil is always derived when data exists.
+    # `seeded` fixture (conftest.py) ensures Punjab/Ludhiana row is in the DB.
     r = client.post("/api/recommend/smart", json={
         "state": "Punjab", "district": "Ludhiana", "top_k": 3,
     })

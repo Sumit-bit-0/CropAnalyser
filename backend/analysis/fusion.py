@@ -33,7 +33,7 @@ from analysis.market_profitability import market_profitability_scores
 from analysis.yield_predict import predict_yield
 from analysis.price_outlook import price_outlook
 from analysis.weather_fit import weather_fit_scores
-from analysis.demand_gate import GATED_CROPS, nearest_facility, proximity_factor
+from analysis.demand_gate import gated_crops, nearest_facility, proximity_factor
 
 # Default weights over the three implemented modules (sum to 1.0), used in Smart
 # Mode when soil/climate is supplied.
@@ -170,10 +170,11 @@ def recommend(state: str, district: str | None = None, season: str | None = None
     # facility, then re-sort. No coords -> no-op. Notes feed the caution layer.
     gate_km = {}
     if coords and coords[0] is not None and coords[1] is not None:
+        gate_map = gated_crops()
         gated = []
         for c, score, breakdown in scored:
-            if c in GATED_CROPS:
-                fac = nearest_facility(GATED_CROPS[c], coords[0], coords[1])
+            if c in gate_map:
+                fac = nearest_facility(gate_map[c], coords[0], coords[1])
                 km = fac["km"] if fac else None
                 factor = proximity_factor(km)
                 score = round(score * factor, 4)
