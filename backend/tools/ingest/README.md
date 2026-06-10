@@ -42,3 +42,17 @@ remediation message but do not halt an `all` run.
 - `N`/`P`/`K` are quoted uppercase columns in Postgres; SQL touching
   `soil_nutrients` must quote them (`SELECT "N","P","K" ...`).
 - Provenance for every load is recorded in the `data_provenance` table.
+
+## Collection: Udyam MSME downloader (`_download/udyam_msme.py`)
+
+Automates the manual Udyam exports that feed the `msme_udyam` adapter.
+
+Setup (once): `pip install -e E:/web-harvester`
+
+Run (headed, supervised — recommended; uses Arc/Chromium):
+`cd backend && python -m tools.ingest._download.udyam_msme --state Bihar --product flour`
+
+It drives udyamregistration.gov.in, captures each (state, product) unit list to
+`_staging/msme/<product>_<state>.xls`, and appends `manifest.csv`. Then ingest as
+usual: `python -m tools.ingest.run`. Re-runs skip already-staged files (`--force`
+to override). Expand coverage by adding names to `STATES` in the module.
