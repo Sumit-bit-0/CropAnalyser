@@ -100,3 +100,41 @@ def test_stage_file_manifest_is_idempotent(tmp_path, monkeypatch):
     dl.stage_file("<table></table>", "rice", "Bihar")  # re-run
     rows = list(csv.DictReader((staging / "manifest.csv").open()))
     assert sum(r["file"] == "rice_bihar.xls" for r in rows) == 1
+
+
+from tools.ingest._download.udyam_msme import capture_level2
+
+LEVEL2 = (FIXTURES / "udyam_level2_sample.html").read_text(encoding="utf-8")
+
+
+class _NoExportPage:
+    """A page with no export control: locator(...).count() == 0."""
+    def __init__(self, html):
+        self._html = html
+    def content(self):
+        return self._html
+    def locator(self, selector):
+        return self
+    def count(self):
+        return 0
+
+
+class _ExportPage:
+    """A page whose export control triggers a real download."""
+    def __init__(self, payload):
+        self._payload = payload
+    def content(self):
+        return "<html>ignored</html>"
+    def locator(self, selector):
+        return self
+    def count(self):
+        return 1
+    def first(self):
+        return self
+
+
+def test_capture_falls_back_to_scrape_when_no_export(tmp_path):
+    content = capture_level2(_NoExportPage(LEVEL2), tmp_path)
+    df = pd.read_html(io.StringIO(content))[0]
+    assert "Enterprise Name" in df.columns
+    assert len(df) == 2  # scraped both rows from the fixture

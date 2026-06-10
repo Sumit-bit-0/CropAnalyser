@@ -60,6 +60,37 @@ def stage_file(content: str, product: str, state: str) -> Path:
     return out
 
 
+# Heuristic selector for a native Export-to-Excel control on Level-2.
+_EXPORT_SELECTOR = (
+    "a:has-text('Export'), a:has-text('Excel'), "
+    "input[value*='Export' i], input[id*='Export' i], img[src*='excel' i]"
+)
+
+
+def capture_level2(page, tmp_dir) -> str:
+    """Return HTML-table content for the Level-2 unit list.
+
+    Primary: click a native Export control and read the downloaded file.
+    Fallback: scrape the rendered table and serialize it. Both yield content
+    pd.read_html can parse.
+    """
+    try:
+        control = page.locator(_EXPORT_SELECTOR)
+        if control.count() > 0:
+            from pathlib import Path as _P
+            with page.expect_download() as dl_info:
+                control.first.click()
+            download = dl_info.value
+            dest = _P(tmp_dir) / "export.xls"
+            download.save_as(str(dest))
+            return dest.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        pass  # fall through to scrape
+
+    headers, rows = parse_level2_table(page.content())
+    return rows_to_xls_html(headers, rows)
+
+
 def parse_level2_table(html: str) -> tuple[list[str], list[list[str]]]:
     """Return (headers, rows) from the unit list on a Level-2 page.
 
