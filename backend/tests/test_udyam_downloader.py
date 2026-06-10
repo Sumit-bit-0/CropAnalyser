@@ -72,3 +72,31 @@ def test_products_match_facility_crop_map():
 def test_states_present_and_bihar_known():
     assert "Bihar" in STATES
     assert len(STATES) >= 1
+
+
+import csv
+from tools.ingest._download import udyam_msme as dl
+
+
+def test_stage_file_writes_and_appends_manifest(tmp_path, monkeypatch):
+    staging = tmp_path / "msme"
+    monkeypatch.setattr(dl, "STAGING_DIR", staging)
+    monkeypatch.setattr(dl, "MANIFEST", staging / "manifest.csv")
+
+    path = dl.stage_file("<table></table>", "flour", "Bihar")
+    assert path.exists()
+    assert path.name == "flour_bihar.xls"
+
+    rows = list(csv.DictReader((staging / "manifest.csv").open()))
+    assert rows[-1] == {"file": "flour_bihar.xls",
+                        "facility_type": "flour_mill", "crop": "wheat"}
+
+
+def test_stage_file_manifest_is_idempotent(tmp_path, monkeypatch):
+    staging = tmp_path / "msme"
+    monkeypatch.setattr(dl, "STAGING_DIR", staging)
+    monkeypatch.setattr(dl, "MANIFEST", staging / "manifest.csv")
+    dl.stage_file("<table></table>", "rice", "Bihar")
+    dl.stage_file("<table></table>", "rice", "Bihar")  # re-run
+    rows = list(csv.DictReader((staging / "manifest.csv").open()))
+    assert sum(r["file"] == "rice_bihar.xls" for r in rows) == 1

@@ -7,9 +7,12 @@ here, not in web_harvester core (consumed only for the browser session).
 Live run needs `pip install -e E:/web-harvester`. Pure functions below need no
 browser; the live flow imports BrowserSession lazily.
 """
+import csv
 import html as _html
+from pathlib import Path
 
 from bs4 import BeautifulSoup
+from config import ROOT
 
 # Columns the msme_udyam.py adapter consumes (others are optional padding).
 REQUIRED_COLS = ["Enterprise Name", "State", "District", "Pin Code"]
@@ -25,6 +28,36 @@ PRODUCTS = {
 # State display names, selected on the search page by visible label. Start with
 # the two already staged manually; extend toward all 36 by adding names here.
 STATES = ["Bihar", "Andhra Pradesh"]
+
+STAGING_DIR = ROOT / "backend" / "tools" / "ingest" / "_staging" / "msme"
+MANIFEST = STAGING_DIR / "manifest.csv"
+_MANIFEST_HEADER = ["file", "facility_type", "crop"]
+
+
+def _slug(state: str) -> str:
+    return state.strip().lower().replace(" ", "_")
+
+
+def stage_file(content: str, product: str, state: str) -> Path:
+    """Write content to _staging/msme/<product>_<state>.xls and append a
+    manifest row (idempotently — never duplicates an existing file row)."""
+    p = PRODUCTS[product]
+    STAGING_DIR.mkdir(parents=True, exist_ok=True)
+    fname = f"{product}_{_slug(state)}.xls"
+    out = STAGING_DIR / fname
+    out.write_text(content, encoding="utf-8")
+
+    existing = []
+    if MANIFEST.exists():
+        existing = list(csv.DictReader(MANIFEST.open(encoding="utf-8")))
+    if not any(r["file"] == fname for r in existing):
+        is_new = not MANIFEST.exists()
+        with MANIFEST.open("a", encoding="utf-8", newline="") as fh:
+            w = csv.writer(fh)
+            if is_new:
+                w.writerow(_MANIFEST_HEADER)
+            w.writerow([fname, p["facility_type"], p["crop"]])
+    return out
 
 
 def parse_level2_table(html: str) -> tuple[list[str], list[list[str]]]:
