@@ -14,6 +14,18 @@ from bs4 import BeautifulSoup
 # Columns the msme_udyam.py adapter consumes (others are optional padding).
 REQUIRED_COLS = ["Enterprise Name", "State", "District", "Pin Code"]
 
+PRODUCTS = {
+    "flour":  {"nic": "10611", "search": "flour",  "facility_type": "flour_mill",     "crop": "wheat"},
+    "rice":   {"nic": "10612", "search": "rice",   "facility_type": "rice_mill",      "crop": "rice"},
+    "dal":    {"nic": "10613", "search": "dal",    "facility_type": "dal_mill",       "crop": "pigeonpeas"},
+    "oil":    {"nic": "10401", "search": "oil",    "facility_type": "oil_mill",       "crop": "mustard"},
+    "cotton": {"nic": "01632", "search": "cotton", "facility_type": "cotton_ginning", "crop": "cotton"},
+}
+
+# State display names, selected on the search page by visible label. Start with
+# the two already staged manually; extend toward all 36 by adding names here.
+STATES = ["Bihar", "Andhra Pradesh"]
+
 
 def parse_level2_table(html: str) -> tuple[list[str], list[list[str]]]:
     """Return (headers, rows) from the unit list on a Level-2 page.

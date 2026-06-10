@@ -54,3 +54,21 @@ def test_missing_required_column_is_emitted_empty():
     df = pd.read_html(io.StringIO(html))[0]
     for col in ADAPTER_COLS:
         assert col in df.columns
+
+
+import pandas as pd
+from config import DATA_RAW
+from tools.ingest._download.udyam_msme import PRODUCTS, STATES
+
+
+def test_products_match_facility_crop_map():
+    fcm = pd.read_csv(DATA_RAW / "facility_crop_map.csv")
+    valid = set(zip(fcm["crop"], fcm["facility_type"]))
+    for key, p in PRODUCTS.items():
+        assert {"nic", "search", "facility_type", "crop"} <= p.keys()
+        assert (p["crop"], p["facility_type"]) in valid, key
+
+
+def test_states_present_and_bihar_known():
+    assert "Bihar" in STATES
+    assert len(STATES) >= 1
