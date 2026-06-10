@@ -51,17 +51,63 @@ def stage_file(content: str, product: str, state: str) -> Path:
     out = STAGING_DIR / fname
     out.write_text(content, encoding="utf-8")
 
+    manifest_exists = MANIFEST.exists()
     existing = []
-    if MANIFEST.exists():
+    if manifest_exists:
         existing = list(csv.DictReader(MANIFEST.open(encoding="utf-8")))
     if not any(r["file"] == fname for r in existing):
-        is_new = not MANIFEST.exists()
         with MANIFEST.open("a", encoding="utf-8", newline="") as fh:
             w = csv.writer(fh)
-            if is_new:
+            if not manifest_exists:
                 w.writerow(_MANIFEST_HEADER)
             w.writerow([fname, p["facility_type"], p["crop"]])
     return out
+
+
+def parse_level2_table(html: str) -> tuple[list[str], list[list[str]]]:
+    """Return (headers, rows) from the unit list on a Level-2 page.
+
+    The units live in the table with the most rows; its first row is the header.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    tables = soup.find_all("table")
+    if not tables:
+        return [], []
+    table = max(tables, key=lambda t: len(t.find_all("tr")))
+    trs = table.find_all("tr")
+    if not trs:
+        return [], []
+    headers = [c.get_text(strip=True) for c in trs[0].find_all(["th", "td"])]
+    rows = []
+    for tr in trs[1:]:
+        cells = [c.get_text(strip=True) for c in tr.find_all(["th", "td"])]
+        if cells:
+            rows.append(cells)
+    return headers, rows
+
+
+def rows_to_xls_html(headers: list[str], rows: list[list[str]]) -> str:
+    """Serialize rows to an HTML <table> string readable by pd.read_html.
+
+    Guarantees REQUIRED_COLS are present and exactly named; any missing one is
+    appended as an empty column so the adapter never KeyErrors.
+    """
+    out_headers = list(headers)
+    for col in REQUIRED_COLS:
+        if col not in out_headers:
+            out_headers.append(col)
+    src_index = {h: i for i, h in enumerate(headers)}
+
+    def cell(row: list[str], col: str) -> str:
+        i = src_index.get(col)
+        return _html.escape(row[i]) if i is not None and i < len(row) else ""
+
+    head = "".join(f"<th>{_html.escape(h)}</th>" for h in out_headers)
+    body = "".join(
+        "<tr>" + "".join(f"<td>{cell(r, h)}</td>" for h in out_headers) + "</tr>"
+        for r in rows
+    )
+    return f"<table><tr>{head}</tr>{body}</table>"
 
 
 # Heuristic selector for a native Export-to-Excel control on Level-2.
@@ -188,49 +234,3 @@ def _main(argv=None):
 
 if __name__ == "__main__":
     _main()
-
-
-def parse_level2_table(html: str) -> tuple[list[str], list[list[str]]]:
-    """Return (headers, rows) from the unit list on a Level-2 page.
-
-    The units live in the table with the most rows; its first row is the header.
-    """
-    soup = BeautifulSoup(html, "html.parser")
-    tables = soup.find_all("table")
-    if not tables:
-        return [], []
-    table = max(tables, key=lambda t: len(t.find_all("tr")))
-    trs = table.find_all("tr")
-    if not trs:
-        return [], []
-    headers = [c.get_text(strip=True) for c in trs[0].find_all(["th", "td"])]
-    rows = []
-    for tr in trs[1:]:
-        cells = [c.get_text(strip=True) for c in tr.find_all(["th", "td"])]
-        if cells:
-            rows.append(cells)
-    return headers, rows
-
-
-def rows_to_xls_html(headers: list[str], rows: list[list[str]]) -> str:
-    """Serialize rows to an HTML <table> string readable by pd.read_html.
-
-    Guarantees REQUIRED_COLS are present and exactly named; any missing one is
-    appended as an empty column so the adapter never KeyErrors.
-    """
-    out_headers = list(headers)
-    for col in REQUIRED_COLS:
-        if col not in out_headers:
-            out_headers.append(col)
-    src_index = {h: i for i, h in enumerate(headers)}
-
-    def cell(row: list[str], col: str) -> str:
-        i = src_index.get(col)
-        return _html.escape(row[i]) if i is not None and i < len(row) else ""
-
-    head = "".join(f"<th>{_html.escape(h)}</th>" for h in out_headers)
-    body = "".join(
-        "<tr>" + "".join(f"<td>{cell(r, h)}</td>" for h in out_headers) + "</tr>"
-        for r in rows
-    )
-    return f"<table><tr>{head}</tr>{body}</table>"

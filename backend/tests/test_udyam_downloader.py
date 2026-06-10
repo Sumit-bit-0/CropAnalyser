@@ -119,20 +119,6 @@ class _NoExportPage:
         return 0
 
 
-class _ExportPage:
-    """A page whose export control triggers a real download."""
-    def __init__(self, payload):
-        self._payload = payload
-    def content(self):
-        return "<html>ignored</html>"
-    def locator(self, selector):
-        return self
-    def count(self):
-        return 1
-    def first(self):
-        return self
-
-
 def test_capture_falls_back_to_scrape_when_no_export(tmp_path):
     content = capture_level2(_NoExportPage(LEVEL2), tmp_path)
     df = pd.read_html(io.StringIO(content))[0]
