@@ -7,7 +7,12 @@ here, not in web_harvester core (consumed only for the browser session).
 Live run needs `pip install -e E:/web-harvester`. Pure functions below need no
 browser; the live flow imports BrowserSession lazily.
 """
+import html as _html
+
 from bs4 import BeautifulSoup
+
+# Columns the msme_udyam.py adapter consumes (others are optional padding).
+REQUIRED_COLS = ["Enterprise Name", "State", "District", "Pin Code"]
 
 
 def parse_level2_table(html: str) -> tuple[list[str], list[list[str]]]:
@@ -30,3 +35,27 @@ def parse_level2_table(html: str) -> tuple[list[str], list[list[str]]]:
         if cells:
             rows.append(cells)
     return headers, rows
+
+
+def rows_to_xls_html(headers: list[str], rows: list[list[str]]) -> str:
+    """Serialize rows to an HTML <table> string readable by pd.read_html.
+
+    Guarantees REQUIRED_COLS are present and exactly named; any missing one is
+    appended as an empty column so the adapter never KeyErrors.
+    """
+    out_headers = list(headers)
+    for col in REQUIRED_COLS:
+        if col not in out_headers:
+            out_headers.append(col)
+    src_index = {h: i for i, h in enumerate(headers)}
+
+    def cell(row: list[str], col: str) -> str:
+        i = src_index.get(col)
+        return _html.escape(row[i]) if i is not None and i < len(row) else ""
+
+    head = "".join(f"<th>{_html.escape(h)}</th>" for h in out_headers)
+    body = "".join(
+        "<tr>" + "".join(f"<td>{cell(r, h)}</td>" for h in out_headers) + "</tr>"
+        for r in rows
+    )
+    return f"<table><tr>{head}</tr>{body}</table>"
