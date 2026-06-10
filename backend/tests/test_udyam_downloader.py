@@ -119,6 +119,8 @@ class _NoExportPage:
         return 0
 
 
+# The native Export-download branch is covered by the supervised live Arc smoke
+# (per the ingest README), not offline; here we exercise the scrape fallback.
 def test_capture_falls_back_to_scrape_when_no_export(tmp_path):
     content = capture_level2(_NoExportPage(LEVEL2), tmp_path)
     df = pd.read_html(io.StringIO(content))[0]
@@ -143,16 +145,17 @@ class _RecordingPage:
         self.calls.append(("wait_for_function", js[:18]))
     def fill(self, selector, value):
         self.calls.append(("fill", selector, value))
-    def click(self, selector):
-        self.calls.append(("click", selector))
     def locator(self, selector):
         self._last = selector
         return self
     @property
     def first(self):
         return self
-    def click(self, *a):  # anchor + button share click; record selector path
-        self.calls.append(("click", getattr(self, "_last", a[0] if a else None)))
+    def click(self, *a):
+        # both page.click(selector) and page.locator(sel).first.click()
+        selector = getattr(self, "_last", a[0] if a else None)
+        self._last = None
+        self.calls.append(("click", selector))
     @contextmanager
     def expect_navigation(self, **kw):
         self.calls.append(("expect_navigation",))
@@ -166,6 +169,8 @@ def test_navigate_issues_expected_sequence():
     assert kinds[:2] == ["set_default_timeout", "goto"]
     assert ("select_option", f"{S}ddlPState", "Bihar") in page.calls
     assert ("fill", f"{S}txtsearchNic", "flour") in page.calls
+    assert ("click", f"{S}btnSearch") in page.calls
+    assert ("click", f"a[href*='cod={PRODUCTS['flour']['nic']}']") in page.calls
     assert ("expect_navigation",) in kinds_tuples(page.calls)
     assert page.calls[1] == ("goto", MAIN)
 
@@ -198,6 +203,22 @@ def test_run_skips_existing_and_isolates_failures(tmp_path, monkeypatch):
     assert meta["done"] == 1
     assert meta["failed"] == 1
     assert meta["skipped"] == 1
+
+
+def test_run_force_refetches_existing(tmp_path, monkeypatch):
+    staging = tmp_path / "msme"
+    staging.mkdir(parents=True)
+    (staging / "flour_bihar.xls").write_text("<table></table>")
+    monkeypatch.setattr(dl, "STAGING_DIR", staging)
+    monkeypatch.setattr(dl, "MANIFEST", staging / "manifest.csv")
+    seen = []
+    def fake(state, pkey, *, headless):
+        seen.append((state, pkey))
+        return dl.stage_file("<table></table>", pkey, state)
+    monkeypatch.setattr(dl, "download_slice", fake)
+    meta = dl.run(states=["Bihar"], products=["flour"], force=True, headless=True)
+    assert ("Bihar", "flour") in seen
+    assert meta["skipped"] == 0
 
 
 def test_download_slice_stages_via_injected_session(tmp_path, monkeypatch):

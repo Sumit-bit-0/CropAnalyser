@@ -54,7 +54,8 @@ def stage_file(content: str, product: str, state: str) -> Path:
     manifest_exists = MANIFEST.exists()
     existing = []
     if manifest_exists:
-        existing = list(csv.DictReader(MANIFEST.open(encoding="utf-8")))
+        with MANIFEST.open(encoding="utf-8") as fh:
+            existing = list(csv.DictReader(fh))
     if not any(r["file"] == fname for r in existing):
         with MANIFEST.open("a", encoding="utf-8", newline="") as fh:
             w = csv.writer(fh)
@@ -127,15 +128,14 @@ def capture_level2(page, tmp_dir) -> str:
     try:
         control = page.locator(_EXPORT_SELECTOR)
         if control.count() > 0:
-            from pathlib import Path as _P
             with page.expect_download() as dl_info:
                 control.first.click()
             download = dl_info.value
-            dest = _P(tmp_dir) / "export.xls"
+            dest = Path(tmp_dir) / "export.xls"
             download.save_as(str(dest))
             return dest.read_text(encoding="utf-8", errors="replace")
-    except Exception:
-        pass  # fall through to scrape
+    except Exception as exc:
+        log.debug("native export failed, falling back to scrape: %s", exc)
 
     headers, rows = parse_level2_table(page.content())
     return rows_to_xls_html(headers, rows)
