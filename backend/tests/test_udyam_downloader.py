@@ -138,3 +138,51 @@ def test_capture_falls_back_to_scrape_when_no_export(tmp_path):
     df = pd.read_html(io.StringIO(content))[0]
     assert "Enterprise Name" in df.columns
     assert len(df) == 2  # scraped both rows from the fixture
+
+
+from contextlib import contextmanager
+from tools.ingest._download.udyam_msme import navigate_to_level2, MAIN, S
+
+
+class _RecordingPage:
+    def __init__(self):
+        self.calls = []
+    def set_default_timeout(self, ms):
+        self.calls.append(("set_default_timeout", ms))
+    def goto(self, url, **kw):
+        self.calls.append(("goto", url))
+    def select_option(self, selector, **kw):
+        self.calls.append(("select_option", selector, kw.get("label")))
+    def wait_for_function(self, js, **kw):
+        self.calls.append(("wait_for_function", js[:18]))
+    def fill(self, selector, value):
+        self.calls.append(("fill", selector, value))
+    def click(self, selector):
+        self.calls.append(("click", selector))
+    def locator(self, selector):
+        self._last = selector
+        return self
+    @property
+    def first(self):
+        return self
+    def click(self, *a):  # anchor + button share click; record selector path
+        self.calls.append(("click", getattr(self, "_last", a[0] if a else None)))
+    @contextmanager
+    def expect_navigation(self, **kw):
+        self.calls.append(("expect_navigation",))
+        yield
+
+
+def test_navigate_issues_expected_sequence():
+    page = _RecordingPage()
+    navigate_to_level2(page, "Bihar", PRODUCTS["flour"])
+    kinds = [c[0] for c in page.calls]
+    assert kinds[:2] == ["set_default_timeout", "goto"]
+    assert ("select_option", f"{S}ddlPState", "Bihar") in page.calls
+    assert ("fill", f"{S}txtsearchNic", "flour") in page.calls
+    assert ("expect_navigation",) in kinds_tuples(page.calls)
+    assert page.calls[1] == ("goto", MAIN)
+
+
+def kinds_tuples(calls):
+    return [c if len(c) == 1 else (c[0],) for c in calls]

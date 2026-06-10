@@ -91,6 +91,34 @@ def capture_level2(page, tmp_dir) -> str:
     return rows_to_xls_html(headers, rows)
 
 
+MAIN = "https://udyamregistration.gov.in/searchregistration.aspx"
+S = "#ctl00_ContentPlaceHolder1_"
+_NAV_TIMEOUT = 150_000
+
+
+def navigate_to_level2(page, state: str, product: dict) -> None:
+    """Search page -> select state -> NIC search -> click count anchor ->
+    Level-2 unit list. Raises if a step's wait times out (caller isolates)."""
+    page.set_default_timeout(60_000)
+    page.goto(MAIN, wait_until="domcontentloaded")
+    page.select_option(f"{S}ddlPState", label=state)
+    page.wait_for_function(
+        f"document.querySelector('{S}ddlPDistrict')"
+        f" && document.querySelector('{S}ddlPDistrict').options.length > 1",
+        timeout=30_000)
+    page.fill(f"{S}txtsearchNic", product["search"])
+    page.click(f"{S}btnSearch")
+    page.wait_for_function("/MSME Count/i.test(document.body.innerText)",
+                           timeout=30_000)
+    anchor = page.locator(f"a[href*='cod={product['nic']}']").first
+    with page.expect_navigation(wait_until="domcontentloaded",
+                                timeout=_NAV_TIMEOUT):
+        anchor.click()
+    page.wait_for_function(
+        "!!document.body && /Enterprise Name/i.test(document.body.innerText)",
+        timeout=_NAV_TIMEOUT)
+
+
 def parse_level2_table(html: str) -> tuple[list[str], list[list[str]]]:
     """Return (headers, rows) from the unit list on a Level-2 page.
 
