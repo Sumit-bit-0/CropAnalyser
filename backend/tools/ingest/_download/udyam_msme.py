@@ -9,10 +9,14 @@ browser; the live flow imports BrowserSession lazily.
 """
 import csv
 import html as _html
+import logging
+import tempfile
 from pathlib import Path
 
 from bs4 import BeautifulSoup
 from config import ROOT
+
+log = logging.getLogger(__name__)
 
 # Columns the msme_udyam.py adapter consumes (others are optional padding).
 REQUIRED_COLS = ["Enterprise Name", "State", "District", "Pin Code"]
@@ -117,6 +121,49 @@ def navigate_to_level2(page, state: str, product: dict) -> None:
     page.wait_for_function(
         "!!document.body && /Enterprise Name/i.test(document.body.innerText)",
         timeout=_NAV_TIMEOUT)
+
+
+def _open_session(headless: bool):
+    """Lazily import web_harvester so pure functions/tests need no browser."""
+    from web_harvester.session import BrowserSession
+    profile = ROOT / "backend" / "tools" / "ingest" / "_download" / ".profile"
+    return BrowserSession(profile_dir=profile, headless=headless)
+
+
+def download_slice(state: str, product_key: str, *, headless: bool = False) -> Path:
+    """Fetch one (state, product) slice and stage it. Returns the .xls path."""
+    product = PRODUCTS[product_key]
+    with _open_session(headless) as sess:
+        navigate_to_level2(sess.page, state, product)
+        with tempfile.TemporaryDirectory() as tmp:
+            content = capture_level2(sess.page, tmp)
+    return stage_file(content, product_key, state)
+
+
+def _target_exists(product_key: str, state: str) -> bool:
+    return (STAGING_DIR / f"{product_key}_{_slug(state)}.xls").exists()
+
+
+def run(states=None, products=None, *, headless=False, force=False) -> dict:
+    """Loop the matrix. Skip combos already staged (unless force); isolate
+    per-combo failures. Returns counts."""
+    states = states if states is not None else STATES
+    products = products if products is not None else list(PRODUCTS)
+    done = failed = skipped = 0
+    for state in states:
+        for pkey in products:
+            if not force and _target_exists(pkey, state):
+                skipped += 1
+                continue
+            try:
+                download_slice(state, pkey, headless=headless)
+                done += 1
+            except Exception as exc:  # one bad combo never sinks the run
+                log.warning("combo failed: %s/%s: %s", state, pkey, exc)
+                failed += 1
+    meta = {"done": done, "failed": failed, "skipped": skipped}
+    log.info("udyam run: %s", meta)
+    return meta
 
 
 def parse_level2_table(html: str) -> tuple[list[str], list[list[str]]]:

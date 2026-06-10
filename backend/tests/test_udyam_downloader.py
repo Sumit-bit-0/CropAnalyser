@@ -186,3 +186,49 @@ def test_navigate_issues_expected_sequence():
 
 def kinds_tuples(calls):
     return [c if len(c) == 1 else (c[0],) for c in calls]
+
+
+def test_run_skips_existing_and_isolates_failures(tmp_path, monkeypatch):
+    staging = tmp_path / "msme"
+    staging.mkdir(parents=True)
+    (staging / "flour_bihar.xls").write_text("<table></table>")  # already done
+    monkeypatch.setattr(dl, "STAGING_DIR", staging)
+    monkeypatch.setattr(dl, "MANIFEST", staging / "manifest.csv")
+
+    seen = []
+
+    def fake_download_slice(state, product_key, *, headless):
+        seen.append((state, product_key))
+        if product_key == "rice":
+            raise RuntimeError("level-2 timeout")
+        return dl.stage_file("<table></table>", product_key, state)
+
+    monkeypatch.setattr(dl, "download_slice", fake_download_slice)
+
+    meta = dl.run(states=["Bihar"], products=["flour", "rice", "dal"],
+                  headless=True)
+    # flour skipped (file exists), rice failed, dal done
+    assert ("Bihar", "flour") not in seen
+    assert meta["done"] == 1
+    assert meta["failed"] == 1
+    assert meta["skipped"] == 1
+
+
+def test_download_slice_stages_via_injected_session(tmp_path, monkeypatch):
+    staging = tmp_path / "msme"
+    monkeypatch.setattr(dl, "STAGING_DIR", staging)
+    monkeypatch.setattr(dl, "MANIFEST", staging / "manifest.csv")
+    monkeypatch.setattr(dl, "navigate_to_level2", lambda page, s, p: None)
+    monkeypatch.setattr(dl, "capture_level2",
+                        lambda page, tmp: "<table><tr><th>Enterprise Name</th>"
+                                          "</tr><tr><td>X Mill</td></tr></table>")
+
+    class _Sess:
+        page = object()
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+    monkeypatch.setattr(dl, "_open_session", lambda headless: _Sess())
+
+    out = dl.download_slice("Bihar", "flour", headless=True)
+    assert out.name == "flour_bihar.xls"
+    assert out.exists()
