@@ -166,6 +166,30 @@ def run(states=None, products=None, *, headless=False, force=False) -> dict:
     return meta
 
 
+def _main(argv=None):
+    import argparse
+    ap = argparse.ArgumentParser(
+        description="Download Udyam MSME unit exports into _staging/msme/.")
+    ap.add_argument("--state", action="append", dest="states",
+                    help="State display name (repeatable). Default: all in STATES.")
+    ap.add_argument("--product", action="append", dest="products",
+                    choices=list(PRODUCTS),
+                    help="Product key (repeatable). Default: all.")
+    ap.add_argument("--headless", action="store_true",
+                    help="Run Chromium headless (default: headed for supervision).")
+    ap.add_argument("--force", action="store_true",
+                    help="Re-fetch combos even if the .xls already exists.")
+    args = ap.parse_args(argv)
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    meta = run(states=args.states, products=args.products,
+               headless=args.headless, force=args.force)
+    print(meta)
+
+
+if __name__ == "__main__":
+    _main()
+
+
 def parse_level2_table(html: str) -> tuple[list[str], list[list[str]]]:
     """Return (headers, rows) from the unit list on a Level-2 page.
 
