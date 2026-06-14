@@ -139,8 +139,12 @@ class _RecordingPage:
         self.calls.append(("set_default_timeout", ms))
     def goto(self, url, **kw):
         self.calls.append(("goto", url))
+    def eval_on_selector_all(self, selector, js):
+        # mimic the live bilingual state dropdown
+        return [("Select", "0"), ("5. BIHAR / बिहार ", "10"),
+                ("2. ANDHRA PRADESH / आन्ध्र प्रदेश ", "28")]
     def select_option(self, selector, **kw):
-        self.calls.append(("select_option", selector, kw.get("label")))
+        self.calls.append(("select_option", selector, kw.get("value")))
     def wait_for_function(self, js, **kw):
         self.calls.append(("wait_for_function", js[:18]))
     def fill(self, selector, value):
@@ -167,7 +171,7 @@ def test_navigate_issues_expected_sequence():
     navigate_to_level2(page, "Bihar", PRODUCTS["flour"])
     kinds = [c[0] for c in page.calls]
     assert kinds[:2] == ["set_default_timeout", "goto"]
-    assert ("select_option", f"{S}ddlPState", "Bihar") in page.calls
+    assert ("select_option", f"{S}ddlPState", "10") in page.calls
     assert ("fill", f"{S}txtsearchNic", "flour") in page.calls
     assert ("click", f"{S}btnSearch") in page.calls
     assert ("click", f"a[href*='cod={PRODUCTS['flour']['nic']}']") in page.calls
@@ -219,6 +223,34 @@ def test_run_force_refetches_existing(tmp_path, monkeypatch):
     meta = dl.run(states=["Bihar"], products=["flour"], force=True, headless=True)
     assert ("Bihar", "flour") in seen
     assert meta["skipped"] == 0
+
+
+import pytest
+from tools.ingest._download.udyam_msme import _resolve_state_value
+
+# Real options captured from the live #ctl00_ContentPlaceHolder1_ddlPState
+# dropdown: bilingual "N. ENGLISH / <Hindi>" labels with a trailing space.
+_STATE_OPTIONS = [
+    ("Select", "0"),
+    ("2. ANDHRA PRADESH / आन्ध्र प्रदेश ", "28"),
+    ("5. BIHAR / बिहार ", "10"),
+    ("36. WEST BENGAL / पश्चिम बंगाल", "19"),
+]
+
+
+def test_resolve_state_value_matches_english_despite_bilingual_label():
+    assert _resolve_state_value(_STATE_OPTIONS, "Bihar") == "10"
+    assert _resolve_state_value(_STATE_OPTIONS, "Andhra Pradesh") == "28"
+    assert _resolve_state_value(_STATE_OPTIONS, "West Bengal") == "19"
+
+
+def test_resolve_state_value_tolerates_case_and_whitespace():
+    assert _resolve_state_value(_STATE_OPTIONS, "  bihar ") == "10"
+
+
+def test_resolve_state_value_raises_for_unknown_state():
+    with pytest.raises(LookupError):
+        _resolve_state_value(_STATE_OPTIONS, "Atlantis")
 
 
 def test_download_slice_stages_via_injected_session(tmp_path, monkeypatch):

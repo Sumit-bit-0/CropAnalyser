@@ -10,6 +10,7 @@ browser; the live flow imports BrowserSession lazily.
 import csv
 import html as _html
 import logging
+import re
 import tempfile
 from pathlib import Path
 
@@ -146,12 +147,39 @@ S = "#ctl00_ContentPlaceHolder1_"
 _NAV_TIMEOUT = 150_000
 
 
+_STATE_NUM_PREFIX = re.compile(r"^\s*\d+\.\s*")
+
+
+def _resolve_state_value(options, state: str) -> str:
+    """Map a plain English state name to the bilingual dropdown's option value.
+
+    Udyam labels read like '5. BIHAR / बिहार ' — a numeric prefix, the English
+    name in caps, ' / ', the Hindi name in Devanagari, and a trailing space.
+    Playwright's label= match is exact, so we instead match the English portion
+    (before '/', minus the prefix) case-insensitively and return its stable value.
+    """
+    want = state.strip().upper()
+    for text, value in options:
+        english = _STATE_NUM_PREFIX.sub("", (text or "").split("/")[0]).strip().upper()
+        if english == want:
+            return value
+    raise LookupError(
+        f"state {state!r} not found among {len(options)} dropdown options")
+
+
 def navigate_to_level2(page, state: str, product: dict) -> None:
     """Search page -> select state -> NIC search -> click count anchor ->
     Level-2 unit list. Raises if a step's wait times out (caller isolates)."""
     page.set_default_timeout(60_000)
     page.goto(MAIN, wait_until="domcontentloaded")
-    page.select_option(f"{S}ddlPState", label=state)
+    page.wait_for_function(
+        f"document.querySelector('{S}ddlPState')"
+        f" && document.querySelector('{S}ddlPState').options.length > 1",
+        timeout=30_000)
+    options = page.eval_on_selector_all(
+        f"{S}ddlPState option",
+        "els => els.map(o => [o.textContent, o.value])")
+    page.select_option(f"{S}ddlPState", value=_resolve_state_value(options, state))
     page.wait_for_function(
         f"document.querySelector('{S}ddlPDistrict')"
         f" && document.querySelector('{S}ddlPDistrict').options.length > 1",
