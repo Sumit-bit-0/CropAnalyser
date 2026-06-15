@@ -32,7 +32,8 @@ PRODUCTS = {
 
 # State display names, selected on the search page by visible label. Start with
 # the two already staged manually; extend toward all 36 by adding names here.
-STATES = ["Bihar", "Andhra Pradesh"]
+# Gujarat added 2026-06-15 after a live cotton run returned 1,641 ginning units.
+STATES = ["Bihar", "Andhra Pradesh", "Gujarat"]
 
 STAGING_DIR = ROOT / "backend" / "tools" / "ingest" / "_staging" / "msme"
 MANIFEST = STAGING_DIR / "manifest.csv"
