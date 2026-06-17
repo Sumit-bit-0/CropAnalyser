@@ -76,3 +76,19 @@ def test_both_unavailable_gives_null_winner(monkeypatch):
     out = cc.compare_channels("wheat", 25.6, 85.1)
     assert out["winner"] is None
     assert "cannot" in out["explanation"].lower() or "no" in out["explanation"].lower()
+
+
+def test_processor_available_mandi_unavailable_does_not_crash(monkeypatch):
+    _patch(monkeypatch,
+           gated={"wheat": "flour_mill"},
+           facility={"name": "X Flour Mill", "km": 22.0},
+           assured={"available": True, "msp": 2425, "basis": "MSP",
+                    "premium_pct": 5, "processor_price": 2546.25},
+           mandi_rows=[])  # no mandi price for this crop
+    out = cc.compare_channels("wheat", 25.6, 85.1)
+    assert out["processor"]["available"] is True
+    assert out["mandi"]["available"] is False
+    assert out["winner"] == "processor"
+    assert out["margin_per_q"] is None
+    assert isinstance(out["explanation"], str) and out["explanation"]
+    assert "mandi" in out["explanation"].lower()

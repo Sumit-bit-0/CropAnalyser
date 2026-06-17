@@ -49,10 +49,12 @@ def _mandi_channel(crop, lat, lon, rate_per_km):
 
 def _explain(crop, proc, mandi, winner):
     if winner == "processor":
-        return (f"Processor pays Rs.{proc['processor_price']:.0f}/q "
-                f"({proc['basis']} + est. {proc['premium_pct']:.0f}% premium); after "
-                f"{proc['distance_km']} km transport nets Rs.{proc['net_price']:.0f}/q "
-                f"vs the best mandi's Rs.{mandi['net_price']:.0f}/q.")
+        base = (f"Processor pays Rs.{proc['processor_price']:.0f}/q "
+                f"({proc['basis']} + est. {proc['premium_pct']:.0f}% premium) and nets "
+                f"Rs.{proc['net_price']:.0f}/q after {proc['distance_km']} km transport")
+        if mandi.get("available"):
+            return base + f", vs the best mandi's Rs.{mandi['net_price']:.0f}/q."
+        return base + f"; no mandi price available ({mandi.get('reason')})."
     if winner == "mandi":
         m = (f"Best mandi ({mandi['market']}) nets Rs.{mandi['net_price']:.0f}/q")
         if proc.get("available"):
