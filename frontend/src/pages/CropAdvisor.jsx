@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { MODULE_COLORS } from '@/lib/chartColors'
+import ChannelCompareCard from '../workspace/ChannelCompareCard'
 
 const GOALS = ['balanced', 'max_profit', 'low_risk', 'sustainable', 'water_efficient']
 const MODULES = ['suitability', 'regional', 'market', 'weather']
@@ -20,7 +21,7 @@ const trendColor = (x) => (x === 'rising' ? 'text-primary' : x === 'falling' ? '
 export default function CropAdvisor() {
   const { t } = useTranslation()
   const cropName = useCropName()
-  const { state, district, season, lat, lon, soil, setCrop } = useWorkspace()
+  const { state, district, season, lat, lon, area, soil, setCrop } = useWorkspace()
   const [goal, setGoal] = useState('')
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
@@ -137,6 +138,15 @@ export default function CropAdvisor() {
                   </div>
                   {r.why.map((w) => <p key={w} className="text-sm text-primary">✓ {w}</p>)}
                   {r.cautions.map((c) => <p key={c} className="text-sm text-accent">⚠ {c}</p>)}
+                  <ChannelCompareCard
+                    crop={r.crop}
+                    lat={lat}
+                    lon={lon}
+                    state={state}
+                    district={district}
+                    season={season === 'Any' ? undefined : season}
+                    area={area || undefined}
+                  />
                 </CardContent>
               </Card>
               </motion.div>

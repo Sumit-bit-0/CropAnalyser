@@ -19,3 +19,4 @@ export const compareMandis    = (params) => api.get('/mandi/compare', { params }
 export const fpoBulkPlan       = (body) => api.post('/fpo/bulk-plan', body).then(r => r.data)
 export const locateByGps      = (lat, lon) => api.get('/geo/locate', { params: { lat, lon } }).then(r => r.data)
 export const resolvePincode   = (pin) => api.get(`/geo/pincode/${pin}`).then(r => r.data)
+export const compareChannels  = (params) => api.get('/compare/channels', { params }).then((r) => r.data)
