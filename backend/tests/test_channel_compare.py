@@ -92,3 +92,40 @@ def test_processor_available_mandi_unavailable_does_not_crash(monkeypatch):
     assert out["margin_per_q"] is None
     assert isinstance(out["explanation"], str) and out["explanation"]
     assert "mandi" in out["explanation"].lower()
+
+
+def _patch_yield(monkeypatch, predicted):
+    monkeypatch.setattr(cc, "predict_yield",
+                        lambda state, district, season, crop, year:
+                        {"predicted_yield": predicted, "unit": "q/ha"})
+
+
+def test_total_advantage_present_when_yield_and_area_resolve(monkeypatch):
+    _patch(monkeypatch,
+           gated={"wheat": "flour_mill"},
+           facility={"name": "X", "km": 22.0},
+           assured={"available": True, "msp": 2425, "basis": "MSP",
+                    "premium_pct": 5, "processor_price": 2546.25},
+           mandi_rows=[{"is_best_net": True, "net_price": 2270.0, "market": "Patna",
+                        "distance_km": 60.0, "modal_price": 2300, "transport_per_q": 30.0}])
+    _patch_yield(monkeypatch, 35)
+    out = cc.compare_channels("wheat", 25.6, 85.1, area_ha=2.0,
+                              state="Bihar", district="Patna", season="rabi", year=2024)
+    ta = out["total_advantage"]
+    assert ta["estimate"] is True
+    assert ta["yield_q_per_ha"] == 35
+    assert ta["value"] == round(out["margin_per_q"] * 35 * 2.0, 2)
+
+
+def test_total_advantage_omitted_when_yield_none(monkeypatch):
+    _patch(monkeypatch,
+           gated={"wheat": "flour_mill"},
+           facility={"name": "X", "km": 22.0},
+           assured={"available": True, "msp": 2425, "basis": "MSP",
+                    "premium_pct": 5, "processor_price": 2546.25},
+           mandi_rows=[{"is_best_net": True, "net_price": 2270.0, "market": "Patna",
+                        "distance_km": 60.0, "modal_price": 2300, "transport_per_q": 30.0}])
+    _patch_yield(monkeypatch, None)
+    out = cc.compare_channels("wheat", 25.6, 85.1, area_ha=2.0,
+                              state="Bihar", district="Patna", season="rabi", year=2024)
+    assert out["total_advantage"] is None

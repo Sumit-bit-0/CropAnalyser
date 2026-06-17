@@ -8,6 +8,7 @@ apples. An unavailable channel is marked unavailable, never read as 0.
 from analysis.price_reference import assured_price
 from analysis.demand_gate import gated_crops, nearest_facility
 from analysis.mandi_compare import compare_markets
+from analysis.yield_predict import predict_yield
 
 # Estimated transport cost, rupees per quintal per km (truck ~100 q at ~Rs.50/km).
 # Documented estimate, overridable by the caller. Must be non-zero so distance
@@ -78,8 +79,16 @@ def compare_channels(crop, lat, lon, *, area_ha=None, state=None, district=None,
     else:
         winner, margin = None, None
 
+    total = None
+    if margin is not None and area_ha and state and season is not None:
+        y = predict_yield(state, district, season, crop, year or 2024)
+        yq = y.get("predicted_yield")
+        if yq:
+            total = {"area_ha": area_ha, "yield_q_per_ha": yq,
+                     "value": round(margin * yq * area_ha, 2), "estimate": True}
+
     return {
         "crop": crop, "processor": proc, "mandi": mandi,
-        "winner": winner, "margin_per_q": margin, "total_advantage": None,
+        "winner": winner, "margin_per_q": margin, "total_advantage": total,
         "explanation": _explain(crop, proc, mandi, winner),
     }
