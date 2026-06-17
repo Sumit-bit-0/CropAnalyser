@@ -34,6 +34,7 @@ from analysis.yield_predict import predict_yield
 from analysis.price_outlook import price_outlook
 from analysis.weather_fit import weather_fit_scores
 from analysis.demand_gate import gated_crops, nearest_facility, proximity_factor
+from analysis.channel_compare import compare_channels
 
 # Default weights over the three implemented modules (sum to 1.0), used in Smart
 # Mode when soil/climate is supplied.
@@ -49,6 +50,8 @@ SIMPLE_MODE_WEIGHTS = {"regional": 0.50, "market": 0.30, "weather": 0.20}
 # Geometric-mean softening: a 0 score becomes this floor, so one weak dimension
 # strongly penalizes the total without zeroing it outright.
 SOFTENING_FLOOR = 0.05
+
+BOOST_CAP = 0.15  # max +15% ranking uplift when a processor channel out-pays the mandi
 
 
 def _fuse(breakdown: dict, w: dict, method: str) -> float:
@@ -120,6 +123,24 @@ def _enrich(rec: dict, modules: dict, state, district, season) -> dict:
     return rec
 
 
+def apply_processor_boost(crop, score, lat, lon):
+    """Return (boosted_score, positive_note|None). Bounded uplift when the crop's
+    processor channel out-pays the mandi; otherwise unchanged. Pure given
+    compare_channels (which is monkeypatched in tests)."""
+    cmp = compare_channels(crop, lat, lon)
+    if cmp.get("winner") != "processor" or not cmp.get("margin_per_q"):
+        return score, None
+    mandi = cmp["mandi"]
+    ref = mandi["net_price"] if mandi.get("available") and mandi["net_price"] else cmp["margin_per_q"]
+    norm = min(1.0, max(0.0, cmp["margin_per_q"] / ref)) if ref else 1.0
+    boosted = round(score * (1 + BOOST_CAP * norm), 4)
+    proc = cmp["processor"]
+    note = (f"a {proc['facility']} is {proc['distance_km']} km away and pays "
+            f"~Rs.{cmp['margin_per_q']:.0f}/q more than the mandi — "
+            f"strong grow-for-industry option")
+    return boosted, note
+
+
 def recommend(state: str, district: str | None = None, season: str | None = None,
               features: dict | None = None, goal: str | None = None,
               crops=None, top_k: int = 3, weights: dict | None = None,
@@ -169,6 +190,7 @@ def recommend(state: str, district: str | None = None, season: str | None = None
     # Processing-demand gate: scale gated crops by proximity to a required
     # facility, then re-sort. No coords -> no-op. Notes feed the caution layer.
     gate_km = {}
+    boost_notes = {}
     if coords and coords[0] is not None and coords[1] is not None:
         gate_map = gated_crops()
         gated = []
@@ -180,6 +202,10 @@ def recommend(state: str, district: str | None = None, season: str | None = None
                 score = round(score * factor, 4)
                 if factor < 1.0:
                     gate_km[c] = km
+                else:  # facility is near — reward only if it out-pays the mandi
+                    score, note = apply_processor_boost(c, score, coords[0], coords[1])
+                    if note:
+                        boost_notes[c] = note
             gated.append((c, score, breakdown))
         gated.sort(key=lambda t: t[1], reverse=True)
         scored = gated
@@ -199,6 +225,10 @@ def recommend(state: str, district: str | None = None, season: str | None = None
                 else "no sugar mill is on record nearby"
             rec["cautions"].append(
                 f"{where} — sugarcane is a processing crop and hard to sell far from a mill")
+
+    for rec in recommendations:
+        if rec["crop"] in boost_notes:
+            rec.setdefault("highlights", []).append(boost_notes[rec["crop"]])
 
     return {
         "modules_used": sorted(w.keys()),
