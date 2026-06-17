@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import CORS_ORIGINS, init_dirs
-from api import states, crops, trends, revenue, forecast, recommend, profit, mandi, geo, fpo
+from api import states, crops, trends, revenue, forecast, recommend, profit, mandi, geo, fpo, compare
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,6 +28,7 @@ app.include_router(profit.router, prefix="/api")
 app.include_router(mandi.router, prefix="/api")
 app.include_router(geo.router, prefix="/api")
 app.include_router(fpo.router, prefix="/api")
+app.include_router(compare.router, prefix="/api")
 
 @app.get("/health")
 def health():
