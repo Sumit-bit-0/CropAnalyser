@@ -23,4 +23,6 @@ def client_ip(request) -> str:
     return get_remote_address(request)
 
 
-limiter = Limiter(key_func=client_ip, default_limits=[RATE_LIMIT])
+# headers_enabled adds X-RateLimit-Limit/Remaining/Reset to every response so
+# clients can see their budget (and it's an easy liveness signal in prod).
+limiter = Limiter(key_func=client_ip, default_limits=[RATE_LIMIT], headers_enabled=True)
