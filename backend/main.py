@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from config import CORS_ORIGINS, init_dirs
+from config import CORS_ORIGINS, CORS_ORIGIN_REGEX, init_dirs
 from api import states, crops, trends, revenue, forecast, recommend, profit, mandi, geo, fpo, compare
 
 @asynccontextmanager
@@ -14,6 +14,7 @@ app = FastAPI(title="Agri Market Access Analyser API", version="1.0.0", lifespan
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
+    allow_origin_regex=CORS_ORIGIN_REGEX,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
