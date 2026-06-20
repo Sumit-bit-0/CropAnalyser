@@ -1,19 +1,27 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 from analysis.geo import locate
 from analysis.pincode import resolve_pincode, nearest_pincode
 
 router = APIRouter()
 
 
-@router.get("/geo/locate")
-def geo_locate(lat: float = Query(...), lon: float = Query(...)):
-    """Reverse-locate GPS coords. Prefers the nearest pincode (precise area +
-    coords) when the pincode table is bundled; otherwise falls back to the
-    district-centroid locate()."""
-    near = nearest_pincode(lat, lon)
+class Coords(BaseModel):
+    lat: float
+    lon: float
+
+
+@router.post("/geo/locate")
+def geo_locate(body: Coords):
+    """Reverse-locate GPS coords. POST (not GET) so the user's precise
+    coordinates travel in the request body rather than a URL query string,
+    keeping them out of server/proxy access logs and browser history. Prefers
+    the nearest bundled pincode (precise area + coords); otherwise falls back to
+    the district-centroid locate()."""
+    near = nearest_pincode(body.lat, body.lon)
     if near:
         return near
-    return locate(lat, lon)
+    return locate(body.lat, body.lon)
 
 
 @router.get("/geo/pincode/{pin}")

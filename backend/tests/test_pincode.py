@@ -99,5 +99,5 @@ def test_route_locate_prefers_pincode(monkeypatch):
                         lambda lat, lon: {"pincode": "141001", "state": "Punjab",
                                           "district": "Ludhiana", "area": "Ludhiana H.O",
                                           "lat": 30.91, "lon": 75.85, "distance_km": 2.1, "source": "offline"})
-    out = geo_api.geo_locate(30.90, 75.86)
+    out = geo_api.geo_locate(geo_api.Coords(lat=30.90, lon=75.86))
     assert out["pincode"] == "141001" and out["area"] == "Ludhiana H.O"

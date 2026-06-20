@@ -70,6 +70,9 @@
   "loc.errGeoUnsupported": "Geolocation not supported",
   "loc.errResolve": "Could not resolve your location",
   "loc.errDenied": "Location permission denied",
+  "loc.errTimeout": "Location timed out — try again",
+  "loc.errUnavailable": "Location unavailable — enter your pincode instead",
+  "loc.locating": "Locating…",
 
   "crop.label": "Crop",
   "crop.placeholder": "e.g. Maize",

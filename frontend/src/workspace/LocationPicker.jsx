@@ -9,7 +9,7 @@ export default function LocationPicker({ states }) {
   const [tab, setTab] = useState('pincode')   // 'pincode' | 'manual'
   const [pin, setPin] = useState(pincode || '')
   const [status, setStatus] = useState(null)  // {ok} | {err}
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState(null)       // null | 'pin' | 'gps' (which action is running)
 
   const applyResolved = (r, fallbackCoords) => {
     setLocation({
@@ -23,15 +23,15 @@ export default function LocationPicker({ states }) {
 
   const lookupPin = async () => {
     if (!/^\d{6}$/.test(pin)) { setStatus({ err: t('loc.errSixDigit') }); return }
-    setBusy(true); setStatus(null)
+    setBusy('pin'); setStatus(null)
     try { applyResolved(await resolvePincode(pin)) }
     catch { setStatus({ err: t('loc.errNotFound') }) }
-    finally { setBusy(false) }
+    finally { setBusy(null) }
   }
 
   const useGps = () => {
     if (!navigator.geolocation) { setStatus({ err: t('loc.errGeoUnsupported') }); return }
-    setBusy(true); setStatus(null)
+    setBusy('gps'); setStatus(null)
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const fallback = { lat: pos.coords.latitude, lon: pos.coords.longitude }
@@ -40,10 +40,16 @@ export default function LocationPicker({ states }) {
           setPin(r.pincode || '')
           applyResolved(r, fallback)
         } catch { setStatus({ err: t('loc.errResolve') }) }
-        finally { setBusy(false) }
+        finally { setBusy(null) }
       },
-      () => { setStatus({ err: t('loc.errDenied') }); setBusy(false) },
-      { timeout: 8000 },
+      (e) => {
+        // Distinct message per error code (was: every error reported as "denied").
+        const key = e.code === e.PERMISSION_DENIED ? 'loc.errDenied'
+          : e.code === e.TIMEOUT ? 'loc.errTimeout'
+          : 'loc.errUnavailable'
+        setStatus({ err: t(key) }); setBusy(null)
+      },
+      { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 },
     )
   }
 
@@ -66,9 +72,9 @@ export default function LocationPicker({ states }) {
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                 className="mt-1 block w-32 border border-border rounded px-2 py-2" />
             </label>
-            <button type="button" onClick={lookupPin} disabled={busy}
+            <button type="button" onClick={lookupPin} disabled={!!busy}
               className="bg-primary text-primary-foreground rounded px-3 py-2 text-sm disabled:opacity-50">
-              {busy ? '…' : t('loc.find')}
+              {busy === 'pin' ? '…' : t('loc.find')}
             </button>
           </>
         ) : (
@@ -88,9 +94,9 @@ export default function LocationPicker({ states }) {
           </>
         )}
 
-        <button type="button" onClick={useGps} disabled={busy}
+        <button type="button" onClick={useGps} disabled={!!busy}
           className="text-sm text-primary hover:text-primary/80 disabled:opacity-50 pb-2">
-          📍 {t('loc.useMyLocation')}
+          {busy === 'gps' ? `⏳ ${t('loc.locating')}` : `📍 ${t('loc.useMyLocation')}`}
         </button>
       </div>
 

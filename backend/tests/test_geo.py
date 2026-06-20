@@ -40,10 +40,12 @@ def test_locate_karnataka_coords():
 
 
 def test_geo_locate_endpoint():
-    r = client.get("/api/geo/locate", params={"lat": 30.90, "lon": 75.85})
+    r = client.post("/api/geo/locate", json={"lat": 30.90, "lon": 75.85})
     assert r.status_code == 200
     assert r.json()["state"] == "Punjab"
 
 
 def test_geo_locate_requires_coords():
-    assert client.get("/api/geo/locate").status_code == 422
+    # Missing body -> 422 (coords are required); GET is no longer allowed (405).
+    assert client.post("/api/geo/locate").status_code == 422
+    assert client.get("/api/geo/locate", params={"lat": 30.9, "lon": 75.85}).status_code == 405
