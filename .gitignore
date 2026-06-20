@@ -37,3 +37,7 @@ saved_models/*
 !saved_models/yield_vocabs.json
 !saved_models/yield_target_scalers.json
 !saved_models/yield_metrics.json
+# Catalog of LSTM forecast models (the .pt files themselves live in a separate
+# repo and are lazily fetched; this lets /forecast/available work in prod).
+!saved_models/forecast_manifest.json
+.vercel

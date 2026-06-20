@@ -18,6 +18,14 @@ DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
 LSTM_SEQUENCE_LEN = 12
 LSTM_FORECAST_LEN = 6
 
+# LSTM price-forecast models (~411MB) are too big to ship in the image, so they
+# live in a separate public repo and are lazily fetched per (state, commodity) on
+# demand. Override with FORECAST_MODELS_BASE_URL if the host changes.
+FORECAST_MODELS_BASE_URL = os.getenv(
+    "FORECAST_MODELS_BASE_URL",
+    "https://raw.githubusercontent.com/Sumit-bit-0/agri-forecast-models/main",
+)
+
 # Allowed browser origins for CORS. The known dev + production hosts are always
 # allowed so the app never breaks on a mistyped env var; any extra origins in
 # CORS_ORIGINS (comma-separated) are unioned in. Each entry is stripped so a

@@ -1,4 +1,7 @@
 import json
+import logging
+import urllib.error
+import urllib.request
 import joblib
 import numpy as np
 import torch
@@ -6,24 +9,58 @@ from models.lstm import PriceLSTM
 from analysis.trends import get_price_trend
 from analysis.summaries import table_exists
 from database import query
-from config import LSTM_SEQUENCE_LEN, LSTM_FORECAST_LEN, MODELS_DIR
+from config import (LSTM_SEQUENCE_LEN, LSTM_FORECAST_LEN, MODELS_DIR,
+                    FORECAST_MODELS_BASE_URL)
 
 INPUT_SIZE  = 4
 OUTPUT_SIZE = 2
+
+log = logging.getLogger(__name__)
 
 
 def _safe_model_name(state: str, commodity: str) -> str:
     return f"{state}_{commodity}".replace(" ", "_").replace("/", "-")
 
 
+def _ensure_local(safe_name: str) -> None:
+    """Fetch a model's files from FORECAST_MODELS_BASE_URL into MODELS_DIR if not
+    already present (lazy cache). The 411MB model set isn't shipped in the image;
+    each forecast pulls only its ~3 small files. No-op when already cached (local
+    dev or warm container). `_meta.json` is optional — a 404 there is fine
+    (defaults apply); a missing .pt/.joblib simply leaves predict() to raise a
+    clean FileNotFoundError, which the forecast endpoint degrades to history."""
+    required = (f"{safe_name}.pt", f"{safe_name}_scaler.joblib")
+    optional = (f"{safe_name}_meta.json",)
+    for fname in required + optional:
+        dest = MODELS_DIR / fname
+        if dest.exists():
+            continue
+        url = f"{FORECAST_MODELS_BASE_URL}/{urllib.request.quote(fname)}"
+        try:
+            MODELS_DIR.mkdir(parents=True, exist_ok=True)
+            tmp = dest.with_name(dest.name + ".part")
+            urllib.request.urlretrieve(url, tmp)
+            tmp.replace(dest)
+        except urllib.error.HTTPError as exc:
+            if fname in optional and exc.code == 404:
+                continue  # sidecar genuinely absent; defaults will be used
+            log.warning("model fetch failed for %s: %s", fname, exc)
+        except Exception as exc:  # network/IO — leave missing, predict() will raise
+            log.warning("model fetch error for %s: %s", fname, exc)
+
+
 def available_forecasts() -> dict[str, list[str]]:
     """Map of {state: [commodities]} for which a trained model file exists.
 
-    Iterates the known (state, commodity) pairs and keeps only those with a model
-    on disk, so the catalog can never advertise a missing model and avoids fragile
-    reverse-parsing of model filenames. Reads pairs from the tiny summary table
-    (instant) instead of scanning the 27.6M-row prices table; live fallback if absent.
+    Prefers a committed manifest (saved_models/forecast_manifest.json) listing the
+    trained pairs, so the catalog works in production where the 411MB model files
+    are NOT on disk (they're lazily fetched per request). Falls back to scanning
+    local model files (dev) when the manifest is absent.
     """
+    manifest = MODELS_DIR / "forecast_manifest.json"
+    if manifest.exists():
+        return json.loads(manifest.read_text(encoding="utf-8"))
+
     if table_exists("summary_crop_markup"):
         pairs = query("SELECT state, commodity FROM summary_crop_markup")
     else:
@@ -52,6 +89,7 @@ def _month_features(period: str) -> tuple[float, float]:
 
 def predict(state: str, commodity: str) -> list[dict]:
     safe_name   = _safe_model_name(state, commodity)
+    _ensure_local(safe_name)
     model_path  = MODELS_DIR / f"{safe_name}.pt"
     scaler_path = MODELS_DIR / f"{safe_name}_scaler.joblib"
 
