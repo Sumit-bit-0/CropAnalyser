@@ -7,6 +7,7 @@ __v0_jsx-dev-runtime.ts
 .vercel/
 
 # Environment variables
+.env
 .env*.local
 
 # Common ignores
@@ -27,3 +28,12 @@ backend/tools/crop_wikidata_cache.json
 # Real-data ingestion: manual downloads / large raw source files (never commit)
 backend/tools/ingest/_staging/*
 !backend/tools/ingest/_staging/.gitkeep
+
+# Trained model weights. The LSTM price-forecast models (~413MB, 3,977 files)
+# are NOT deployed — price_outlook falls back to historical trend without them.
+# Only the tiny YieldMLP bundle is committed (powers the Advisor + channel engine).
+saved_models/*
+!saved_models/yield_model.pt
+!saved_models/yield_vocabs.json
+!saved_models/yield_target_scalers.json
+!saved_models/yield_metrics.json

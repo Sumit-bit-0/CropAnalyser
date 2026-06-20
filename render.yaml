@@ -1,0 +1,28 @@
+# Render Blueprint — FastAPI backend for the Agri Market Access Analyser.
+# Frontend deploys to Vercel; Postgres is hosted on Neon (set DATABASE_URL below).
+#
+# torch is installed from the CPU-only index: the default PyPI wheel bundles CUDA
+# libraries (~2GB) and blows past Render's free-tier disk/build limits. The
+# YieldMLP runs inference-only, so the small CPU wheel is all we need.
+services:
+  - type: web
+    name: agri-analyser-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: "pip install --upgrade pip && pip install torch==2.3.0 --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.10.11"
+      # Neon Postgres connection string (postgresql+psycopg://...). Set in the
+      # Render dashboard after the Neon DB is created — never commit it.
+      - key: DATABASE_URL
+        sync: false
+      # Comma-separated allowed origins; set to the Vercel app URL after deploy.
+      - key: CORS_ORIGINS
+        sync: false
+      # Optional: data.gov.in key for the ingestion pipeline (not needed at runtime).
+      - key: DATA_GOV_API_KEY
+        sync: false
