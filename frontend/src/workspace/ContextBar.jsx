@@ -10,7 +10,7 @@ import {
 
 const SEASONS = ['Any', 'Kharif', 'Rabi', 'Summer', 'Winter', 'Autumn', 'Whole Year']
 
-export default function ContextBar({ states }) {
+export default function ContextBar({ states, statesLoading }) {
   const { t } = useTranslation()
   const { season, setSeason } = useWorkspace()
   const [showSoil, setShowSoil] = useState(false)
@@ -18,7 +18,7 @@ export default function ContextBar({ states }) {
     <div className="sticky top-0 z-20 bg-secondary border-b border-border">
       <div className="mx-auto max-w-[1100px] px-6 py-3">
         <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
-          <LocationPicker states={states} />
+          <LocationPicker states={states} statesLoading={statesLoading} />
           <CropPicker />
           <label className="text-sm text-foreground">{t('season.label')}
             <Select value={season} onValueChange={setSeason}>

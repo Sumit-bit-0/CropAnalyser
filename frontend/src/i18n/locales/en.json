@@ -73,6 +73,7 @@
   "loc.errTimeout": "Location timed out — try again",
   "loc.errUnavailable": "Location unavailable — enter your pincode instead",
   "loc.locating": "Locating…",
+  "loc.loadingStates": "Loading states… (waking the server)",
 
   "crop.label": "Crop",
   "crop.placeholder": "e.g. Maize",

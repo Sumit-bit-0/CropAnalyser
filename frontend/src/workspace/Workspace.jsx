@@ -39,11 +39,17 @@ const INTENTS = [
 export default function Workspace({ initialIntent = 'grow', initialTool = null }) {
   const { t } = useTranslation()
   const [states, setStates] = useState([])
+  const [statesLoading, setStatesLoading] = useState(true)
   const [intentId, setIntentId] = useState(initialIntent)
   const intent = INTENTS.find((i) => i.id === intentId) || INTENTS[0]
   const [toolId, setToolId] = useState(initialTool || intent.tools[0].id)
 
-  useEffect(() => { getTrendFilters().then((d) => setStates(d.states)).catch(() => {}) }, [])
+  useEffect(() => {
+    getTrendFilters()
+      .then((d) => setStates(d.states))
+      .catch(() => {})
+      .finally(() => setStatesLoading(false))
+  }, [])
 
   const pickIntent = (id) => {
     setIntentId(id)
@@ -66,7 +72,7 @@ export default function Workspace({ initialIntent = 'grow', initialTool = null }
         </div>
       </header>
 
-      <ContextBar states={states} />
+      <ContextBar states={states} statesLoading={statesLoading} />
 
       <div className="border-b border-border">
         <div className="mx-auto max-w-[1100px] px-6">

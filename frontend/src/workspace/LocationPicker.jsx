@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useWorkspace } from './WorkspaceContext'
 import { resolvePincode, locateByGps } from '../api/client'
 
-export default function LocationPicker({ states }) {
+export default function LocationPicker({ states, statesLoading }) {
   const { t } = useTranslation()
   const { state, district, area, pincode, setLocation } = useWorkspace()
   const [tab, setTab] = useState('pincode')   // 'pincode' | 'manual'
@@ -81,10 +81,14 @@ export default function LocationPicker({ states }) {
           <>
             <label className="text-sm text-foreground">{t('loc.state')}
               <select value={state} onChange={(e) => setLocation({ state: e.target.value })}
-                className="mt-1 block border border-border rounded px-2 py-2">
+                disabled={statesLoading && states.length === 0}
+                className="mt-1 block border border-border rounded px-2 py-2 disabled:opacity-60">
                 {states.length === 0 && <option>{state}</option>}
                 {states.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
+              {statesLoading && states.length === 0 && (
+                <span className="mt-1 block text-xs text-muted-foreground">⏳ {t('loc.loadingStates')}</span>
+              )}
             </label>
             <label className="text-sm text-foreground">{t('loc.district')}
               <input value={district} placeholder="Ludhiana"
