@@ -12,8 +12,13 @@ from datetime import date
 from functools import lru_cache
 
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
-YEARS_BACK = 5      # number of complete past years to average
-TIMEOUT = 4         # seconds per HTTP attempt
+# 2 recent complete years is plenty for a seasonal climatology and keeps the
+# archive response small (~19KB vs ~48KB for 5y) so the fetch reliably finishes
+# inside TIMEOUT from constrained hosts (e.g. Render free tier). When the fetch
+# completes it gets lru-cached, so both soil_profile and weather_fit reuse one
+# call per location instead of each re-attempting a slow/timed-out request.
+YEARS_BACK = 2      # number of complete past years to average
+TIMEOUT = 6         # seconds per HTTP attempt (margin to succeed-then-cache)
 
 # India agronomic season -> calendar months. Unknown/blank -> all 12.
 _SEASONS = {
