@@ -194,9 +194,13 @@ def recommend(state: str, district: str | None = None, season: str | None = None
     if coords and coords[0] is not None and coords[1] is not None:
         gate_map = gated_crops()
         gated = []
+        fac_by_type = {}  # memoize per facility_type: many crops share one (e.g. pulses->dal_mill)
         for c, score, breakdown in scored:
             if c in gate_map:
-                fac = nearest_facility(gate_map[c], coords[0], coords[1])
+                ft = gate_map[c]
+                if ft not in fac_by_type:
+                    fac_by_type[ft] = nearest_facility(ft, coords[0], coords[1])
+                fac = fac_by_type[ft]
                 km = fac["km"] if fac else None
                 factor = proximity_factor(km)
                 score = round(score * factor, 4)

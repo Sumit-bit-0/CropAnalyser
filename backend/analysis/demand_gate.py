@@ -29,12 +29,23 @@ def gated_crops() -> dict:
     return dict(zip(df["crop"], df["facility_type"]))
 
 
+# A facility beyond FAR_KM is floored by proximity_factor regardless of its exact
+# distance, so prefilter to a generous lat/lon box in SQL instead of fetching and
+# Python-looping every facility of the type. ~2 deg covers >=150km across all of
+# India (lon at 37N: 2*111*cos37 ~= 177km). The recommender calls this once per
+# gated crop, so this turns thousands-of-rows-per-call into a handful (or zero).
+_BOX_DEG = 2.0
+
+
 def nearest_facility(facility_type: str, lat: float, lon: float):
-    """{name, km} of the closest facility of this type, or None."""
+    """{name, km} of the closest facility of this type within ~the gate radius,
+    or None. Distance-prefiltered in SQL so it stays fast when called per crop."""
     if not table_exists("processing_units"):
         return None
     df = query("SELECT name, lat, lon FROM processing_units "
-               "WHERE facility_type=?", (facility_type,))
+               "WHERE facility_type=? AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
+               (facility_type, lat - _BOX_DEG, lat + _BOX_DEG,
+                lon - _BOX_DEG, lon + _BOX_DEG))
     best, best_d = None, float("inf")
     for r in df.itertuples(index=False):
         d = haversine(lat, lon, float(r.lat), float(r.lon))
