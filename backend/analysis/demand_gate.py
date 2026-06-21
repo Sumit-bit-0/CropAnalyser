@@ -56,6 +56,30 @@ def nearest_facility(facility_type: str, lat: float, lon: float):
     return {"name": best.name, "km": round(best_d, 1)}
 
 
+def nearest_facilities(facility_types, lat, lon) -> dict:
+    """Nearest facility per type in ONE query (the recommender otherwise issues
+    one round-trip per type — costly cross-region to Neon). Returns
+    {facility_type: {name, km}} for types that have a facility within the box."""
+    types = list({t for t in facility_types if t})
+    if not types or not table_exists("processing_units"):
+        return {}
+    placeholders = ",".join(["?"] * len(types))
+    df = query(
+        f"SELECT facility_type, name, lat, lon FROM processing_units "
+        f"WHERE facility_type IN ({placeholders}) "
+        f"AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
+        (*types, lat - _BOX_DEG, lat + _BOX_DEG, lon - _BOX_DEG, lon + _BOX_DEG))
+    out: dict = {}
+    for r in df.itertuples(index=False):
+        d = haversine(lat, lon, float(r.lat), float(r.lon))
+        cur = out.get(r.facility_type)
+        if cur is None or d < cur["_d"]:
+            out[r.facility_type] = {"name": r.name, "km": round(d, 1), "_d": d}
+    for v in out.values():
+        v.pop("_d", None)
+    return out
+
+
 def proximity_factor(km) -> float:
     """1.0 within NEAR_KM, linear taper to FLOOR at FAR_KM, FLOOR beyond/unknown."""
     if km is None:

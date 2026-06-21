@@ -33,7 +33,7 @@ from analysis.market_profitability import market_profitability_scores
 from analysis.yield_predict import predict_yield
 from analysis.price_outlook import price_outlook
 from analysis.weather_fit import weather_fit_scores
-from analysis.demand_gate import gated_crops, nearest_facility, proximity_factor
+from analysis.demand_gate import gated_crops, nearest_facilities, proximity_factor
 from analysis.channel_compare import compare_channels
 
 # Default weights over the three implemented modules (sum to 1.0), used in Smart
@@ -193,26 +193,34 @@ def recommend(state: str, district: str | None = None, season: str | None = None
     boost_notes = {}
     if coords and coords[0] is not None and coords[1] is not None:
         gate_map = gated_crops()
+        # ONE query for the nearest facility of every gated type (vs one round-trip
+        # per type — expensive cross-region to Neon).
+        fac_by_type = nearest_facilities(
+            {gate_map[c] for c, _, _ in scored if c in gate_map}, coords[0], coords[1])
         gated = []
-        fac_by_type = {}  # memoize per facility_type: many crops share one (e.g. pulses->dal_mill)
         for c, score, breakdown in scored:
             if c in gate_map:
-                ft = gate_map[c]
-                if ft not in fac_by_type:
-                    fac_by_type[ft] = nearest_facility(ft, coords[0], coords[1])
-                fac = fac_by_type[ft]
+                fac = fac_by_type.get(gate_map[c])
                 km = fac["km"] if fac else None
                 factor = proximity_factor(km)
                 score = round(score * factor, 4)
                 if factor < 1.0:
                     gate_km[c] = km
-                else:  # facility is near — reward only if it out-pays the mandi
-                    score, note = apply_processor_boost(c, score, coords[0], coords[1])
-                    if note:
-                        boost_notes[c] = note
             gated.append((c, score, breakdown))
         gated.sort(key=lambda t: t[1], reverse=True)
-        scored = gated
+        # Processor boost: only the top_k crops actually shown get the channel
+        # comparison (each is a few DB queries) — not every gated crop on the
+        # long tail. A near-facility crop that out-pays the mandi is nudged up.
+        boosted = []
+        for idx, (c, score, breakdown) in enumerate(gated):
+            fac = fac_by_type.get(gate_map.get(c))
+            if idx < top_k and fac and proximity_factor(fac["km"]) >= 1.0:
+                score, note = apply_processor_boost(c, score, coords[0], coords[1])
+                if note:
+                    boost_notes[c] = note
+            boosted.append((c, score, breakdown))
+        boosted.sort(key=lambda t: t[1], reverse=True)
+        scored = boosted
 
     recommendations = [_enrich({
         "crop": c,
